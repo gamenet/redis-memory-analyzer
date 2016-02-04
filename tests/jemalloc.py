@@ -1,5 +1,5 @@
 import unittest
-from rma.Jemalloc2 import Jemalloc
+from rma.jemalloc import Jemalloc
 
 
 class JemallocTestCase(unittest.TestCase):
