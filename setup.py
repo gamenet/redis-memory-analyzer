@@ -44,4 +44,4 @@ try:
 except ImportError:
     from distutils.core import setup
 
-setup(**sdict)
+setup(**sdict, requires=['tqdm', 'tabulate', 'redis'])
