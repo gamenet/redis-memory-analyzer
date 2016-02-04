@@ -1,54 +1,86 @@
-class SplitNode:
-    def __init__(self, count, name, parent, nodes):
-        self.count = count
-        self.name = name
-        self.parent = parent
-        self.nodes = nodes
+def has_numbers(value):
+    return any(char.isdigit() for char in value)
 
 
-# Кейс, когда в ветке дерева вариантивная часть листа в единственном экземпляре не должна вырезаться - это не маска.
-
-class Splitter:
-    def split(self, data):
-        acc = {}
-        for item in data:
-            self.split_by_parts(acc, item)
-
-        return self.extract_patterns(acc)
-
-    def split_by_parts(self, result, data, parent=None):
-        if not data:
-            return result
-
-        entry = data.pop(0)
-        if not entry:
-            return result
-
-        if entry not in result:
-            result[entry] = SplitNode(count=1, name=entry, parent=parent, nodes={})
-        else:
-            result[entry].count += 1
-
-        return self.split_by_parts(result[entry].nodes, data, result[entry])
-
-    def extract_patterns(self, data):
-        result = {}
-        self._extract_patterns(result, data)
-        return result.keys()
-
-    def _extract_patterns(self, acc, data):
-        for key, item in data.items():
-            if len(item.nodes) == 0:
-                if item.parent is None:
-                    acc[key] = 1
-                else:
-                    rec_key = key if item.count > 1 else ""
-                    rec_parent = item.parent
-
-                    while rec_parent is not None:
-                        rec_key = rec_parent.name + ":" + rec_key
-                        rec_parent = rec_parent.parent
-
-                    acc[rec_key] = 1
+def dict_build(indict, pre=None):
+    pre = pre[:] if pre else []
+    if len(indict):
+        for key, value in indict.items():
+            # pre.append(key)
+            if len(value):
+                for d in dict_build(value, pre=pre+[key]):
+                    yield d
             else:
-                self._extract_patterns(acc, item.nodes)
+                yield pre + [key]
+    else:
+        yield pre
+
+
+def map_part_to_glob(index, part, x):
+    if index == 0:
+        return part
+
+    if not part or has_numbers(part):
+        return '*'
+
+    return part
+
+
+class SimpleSplitter:
+    def split(self, data, separator=":"):
+        pass1 = map(lambda x: list(map_part_to_glob(i, y, x) for i, y in enumerate(x.split(separator))), data)
+        # print('Pass filter:', list(filter(lambda x: len(x) == 2, pass1)))
+        pass2 = self.fold_to_tree(pass1)
+        return self.unfold_to_list(pass2, separator)
+
+    def fold_to_tree(self, pass1):
+        tree = {}
+        for item in pass1:
+            t_len = len(item)
+            if t_len not in tree:
+                tree[t_len] = {}
+
+            subtree = tree[t_len]
+            deep = 0
+            for part in item:
+                deep += 1
+                if '*' in subtree:
+                    subtree = subtree['*']
+                    continue
+
+                if part in subtree:
+                    subtree = subtree[part]
+                    continue
+
+                subtree[part] = {}
+                if part != '*':
+                    subtree = subtree[part]
+                    continue
+
+                if len(subtree) == 1:
+                    continue
+
+                if deep > 1:
+                    self.merge_subtree(subtree)
+
+                subtree = subtree[part]
+        return tree
+
+    @staticmethod
+    def merge_subtree(subtree):
+        all_keys = []
+        for sub_part in subtree.keys():
+            if sub_part != '*':
+                all_keys.append(sub_part)
+                subtree['*'].update(subtree[sub_part])
+        for sub_part in all_keys:
+            del subtree[sub_part]
+
+    @staticmethod
+    def unfold_to_list(tree, separator):
+        res = set()
+
+        for i, sub_tree in tree.items():
+            for compound_key in dict_build(sub_tree):
+                res.add(separator.join(compound_key))
+        return res
