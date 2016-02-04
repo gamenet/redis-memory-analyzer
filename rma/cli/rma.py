@@ -24,6 +24,8 @@ Example : %prog --command json -k "user.*" /var/redis/6379/dump.rdb"""
                       help="Database number, defaults to 0")
     parser.add_option("-m", "--match", dest="match", default="*",
                       help="Keys pattern to match")
+    parser.add_option("-l", "--limit", dest="limit", default="0",
+                      help="Get max key matched by pattern")
     parser.add_option("-t", "--type", dest="types", action="append",
                       help="""Data types to include. Possible values are string, hash, list. Multiple typees can be provided.
                     If not specified, all data types will be returned""")
@@ -46,8 +48,8 @@ Example : %prog --command json -k "user.*" /var/redis/6379/dump.rdb"""
             else:
                 filters['types'].append(x)
 
-    app = RmaApplication()
-    app.run({'host': options.host, 'port': options.port, 'match': options.match})
+    app = RmaApplication({'host': options.host, 'port': options.port, 'match': options.match, 'limit': options.limit})
+    app.run()
 
 
 if __name__ == '__main__':
