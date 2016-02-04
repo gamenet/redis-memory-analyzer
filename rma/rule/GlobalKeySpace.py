@@ -1,4 +1,4 @@
-from rma.Redis import *
+from rma.redis import *
 
 class GlobalKeySpace:
     def __init__(self, redis):

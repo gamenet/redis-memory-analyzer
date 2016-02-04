@@ -1,4 +1,4 @@
-from rma.helpers.numbers import *
+from rma.helpers import *
 
 
 class Jemalloc:

@@ -21,12 +21,12 @@ sdict = {
     'maintainer_email': 'misterionkell@gmail.com',
     'keywords': ['Redis', 'Memory Profiler'],
     'license': 'MIT',
-    'packages': ['rma', 'rma.cli'],
+    'packages': ['rma', 'rma.helpers', 'rma.reporters', 'rma.rule', 'rma.cli'],
     'package_data': {'rma.cli': ['*.template']},
     'test_suite': 'tests.all_tests',
     'entry_points': {
         'console_scripts': [
-            'rma = rma.cli.rma:main',
+            'rma = rma.cli.rma_cli:main',
         ],
     },
     'classifiers': [

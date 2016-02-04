@@ -1,4 +1,4 @@
-from rma.Redis import *
+from rma.redis import *
 from rma.helpers import *
 from itertools import *
 
