@@ -22,6 +22,9 @@ REDIS_TYPE_ID_HASH = 1
 REDIS_TYPE_ID_LIST = 2
 REDIS_TYPE_ID_SET = 3
 REDIS_TYPE_ID_ZSET = 4
+REDIS_TYPE_ID_ALL = [
+    REDIS_TYPE_ID_STRING, REDIS_TYPE_ID_HASH, REDIS_TYPE_ID_LIST, REDIS_TYPE_ID_SET, REDIS_TYPE_ID_ZSET
+]
 
 
 def redis_type_to_id(key_type):
@@ -30,15 +33,15 @@ def redis_type_to_id(key_type):
     :param str key_type:
     :return int:
     """
-    if key_type == b'string':
+    if key_type == b'string' or key_type == 'string':
         return REDIS_TYPE_ID_STRING
-    elif key_type == b'hash':
+    elif key_type == b'hash' or key_type == 'hash':
         return REDIS_TYPE_ID_HASH
-    elif key_type == b'list':
+    elif key_type == b'list' or key_type == 'list':
         return REDIS_TYPE_ID_LIST
-    elif key_type == b'set':
+    elif key_type == b'set' or key_type == 'set':
         return REDIS_TYPE_ID_SET
-    elif key_type == b'zset':
+    elif key_type == b'zset' or key_type == 'zset':
         return REDIS_TYPE_ID_ZSET
     else:
         return REDIS_TYPE_ID_UNKNOWN
@@ -160,6 +163,7 @@ def linkedlist_overhead():
     # A list has 5 pointers + an unsigned long
     return 8 + 5*size_of_pointer_fn()
 
+
 def linkedlist_entry_overhead():
     # See https://github.com/antirez/redis/blob/unstable/src/adlist.h
     # A node has 3 pointers
@@ -168,6 +172,33 @@ def linkedlist_entry_overhead():
 
 def size_of_linkedlist_aligned_string(value):
     return Jemalloc.align(linkedlist_entry_overhead() + len(value))
+
+
+def intset_overhead(size):
+    #     typedef struct intset {
+    #     uint32_t encoding;
+    #     uint32_t length;
+    #     int8_t contents[];
+    # } intset;
+    return (4 + 4) * size
+
+
+def intset_aligned(value):
+    overhead = intset_overhead(1)
+    try:
+        val = int(value)
+
+    except ValueError:
+        return Jemalloc.align(8 + overhead)
+
+    if val < 65535:
+        return Jemalloc.align(2 + overhead)
+
+    if val < 2147483647:
+        return Jemalloc.align(4 + overhead)
+
+    return Jemalloc.align(8 + overhead)
+
 
 class StringEntry:
     def __init__(self, value=""):

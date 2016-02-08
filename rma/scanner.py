@@ -7,7 +7,7 @@ class Scanner:
     Get all keys from Redis database with given match and limits. If limit specified would be retrieved not more then
     limit keys.
     """
-    def __init__(self, redis, match="*", limit=0):
+    def __init__(self, redis, match="*", limit=0, accepted_types=None):
         """
         :param RmaRedis redis:
         :param str match: Wild card match supported in Redis SCAN command
@@ -24,6 +24,7 @@ class Scanner:
 
         self.redis = redis
         self.match = match
+        self.accepted_types = accepted_types[:] if accepted_types else REDIS_TYPE_ID_ALL
         self.resolve_types_script = self.redis.register_script("""
             local ret = {}
             for i = 1, #KEYS do
@@ -57,7 +58,7 @@ class Scanner:
         ret.clear()
 
     def scan(self, limit=1000):
-        with tqdm(total=self.redis.total_keys(), desc="Match {0}".format(self.match), miniters=1000) as progress:
+        with tqdm(total=min(limit, self.redis.total_keys()), desc="Match {0}".format(self.match), miniters=1000) as progress:
             total = 0
 
             for key_tuple in self.batch_scan():
@@ -66,7 +67,10 @@ class Scanner:
                     print('\r\nWarning! Scan iterator return key with empty name `` and type %s' % key_type)
                     continue
 
-                self.keys[redis_type_to_id(key_type)].append(key_name.decode("utf-8"))
+                to_id = redis_type_to_id(key_type)
+                if to_id in self.accepted_types:
+                   self.keys[to_id].append(key_name.decode("utf-8"))
+
                 progress.update()
 
                 total += 1

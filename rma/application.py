@@ -76,15 +76,15 @@ class RmaApplication:
         self.reporter = TextReporter()
         if 'filters' in options:
             if 'types' in options['filters']:
-                self.types = options['filters']['types']
+                self.types = list(map(redis_type_to_id, options['filters']['types']))
             else:
-                self.types = None
+                self.types = REDIS_TYPE_ID_ALL
             if 'behaviour' in options['filters']:
                 self.behaviour = options['filters']['behaviour']
             else:
                 self.behaviour = 'all'
         else:
-            self.types = None
+            self.types = REDIS_TYPE_ID_ALL
             self.behaviour = 'all'
 
     def init_globals(self, redis):
@@ -97,7 +97,10 @@ class RmaApplication:
         self.types_rules[REDIS_TYPE_ID_HASH].append(Hash(redis=redis))
         self.types_rules[REDIS_TYPE_ID_LIST].append(KeyString(redis=redis))
         self.types_rules[REDIS_TYPE_ID_LIST].append(List(redis=redis))
+
         self.types_rules[REDIS_TYPE_ID_SET].append(KeyString(redis=redis))
+        self.types_rules[REDIS_TYPE_ID_SET].append(Set(redis=redis))
+
         self.types_rules[REDIS_TYPE_ID_ZSET].append(KeyString(redis=redis))
 
     def run(self):
@@ -106,7 +109,7 @@ class RmaApplication:
         self.init_globals(redis=r)
         self.init_types_rules(redis=r)
 
-        with Scanner(redis=r, match=self.options['match']) as scanner:
+        with Scanner(redis=r, match=self.options['match'], accepted_types=self.types) as scanner:
             scanner_limit = self.options['limit'] if 'limit' != 0 in self.options else sys.maxsize
             res = scanner.scan(limit=scanner_limit)
 
