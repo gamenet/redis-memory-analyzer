@@ -43,7 +43,7 @@ class KeyString:
             key_stat['data'].append(stat_entry)
 
         key_stat['data'].sort(key=lambda x: x[1], reverse=True)
-        key_stat['data'].append(total_row(key_stat['data'], ['Total:', sum, sum, sum, 0, '', 0, 0, 0]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, sum, 0, '', 0, 0, 0]))
 
         return [
             "key stats",

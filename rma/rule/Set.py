@@ -88,7 +88,7 @@ class Set:
             key_stat['data'].append(stat_entry)
 
         key_stat['data'].sort(key=lambda x: x[8], reverse=True)
-        key_stat['data'].append(total_row(key_stat['data'], ['Total:', sum,0,sum,sum,0,sum,'',sum]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, sum, sum, 0, sum, '', sum]))
 
         return [
             "SET stat",
