@@ -1,5 +1,7 @@
+import logging
 from redis import StrictRedis
 from rma.jemalloc import *
+
 
 size_of_pointer = 8
 new_sds = False
@@ -233,12 +235,13 @@ class RealStringEntry:
         :param RmaRedis redis:
         :return:
         """
+
+        self.logger = logging.getLogger(__name__)
         try:
             self.encoding = redis.object("ENCODING", key_name).decode('utf8')
         except AttributeError as e:
-            print(e, key_name)
+            self.logger.warning("Invalid encoding from server for key `%s`" % key_name)
             self.encoding = REDIS_ENCODING_EMBSTR
-
         if self.encoding == REDIS_ENCODING_INT:
             self.useful_bytes = self.get_int_encoded_bytes(redis, key_name)
             self.free_bytes = 0
@@ -278,10 +281,8 @@ def parse_debug(response):
 
 
 class RmaRedis(StrictRedis):
-
     def debug_sdslen(self, key):
         return parse_debug(self.execute_command("DEBUG SDSLEN", key))
-
 
     def total_keys(self):
         return self.info('keyspace')['db0']['keys']

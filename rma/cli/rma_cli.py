@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
+import logging
 from optparse import OptionParser
 from rma.application import RmaApplication
+
+logging.basicConfig(level=logging.INFO)
 
 VALID_TYPES = ("string", "hash", "list", "set", "zset")
 VALID_MODES = ('all', 'scanner', 'ram', 'global')
@@ -15,7 +13,7 @@ VALID_MODES = ('all', 'scanner', 'ram', 'global')
 def main():
     usage = """usage: %prog [options] /path/to/dump.rdb
 
-Example : %prog --command json -k "user.*" /var/redis/6379/dump.rdb"""
+Example : %prog -m * --type hash"""
 
     parser = OptionParser(usage=usage)
     parser.add_option("-s", "--server", dest="host", default="127.0.0.1",
@@ -33,21 +31,17 @@ Example : %prog --command json -k "user.*" /var/redis/6379/dump.rdb"""
     parser.add_option("-b", "--behaviour", dest="behaviour", default="all",
                       help="Specify application working mode")
     parser.add_option("-t", "--type", dest="types", action="append",
-                      help="""Data types to include. Possible values are string, hash, list. Multiple typees can be provided.
+                      help="""Data types to include. Possible values are string, hash, list. Multiple types can be provided.
                     If not specified, all data types will be returned""")
 
     (options, args) = parser.parse_args()
-
-    # if len(args) == 0:
-    #     parser.error("Redis RDB file not specified")
-    #     return
 
     filters = {}
     if options.match:
         filters['match'] = options.match
 
     if options.behaviour:
-        if not options.behaviour in VALID_MODES:
+        if options.behaviour not in VALID_MODES:
             raise Exception(
                 'Invalid behaviour provided - %s. Expected one of %s' % (options.behaviour, (", ".join(VALID_TYPES))))
         else:
@@ -56,13 +50,13 @@ Example : %prog --command json -k "user.*" /var/redis/6379/dump.rdb"""
     if options.types:
         filters['types'] = []
         for x in options.types:
-            if not x in VALID_TYPES:
+            if x not in VALID_TYPES:
                 raise Exception('Invalid type provided - %s. Expected one of %s' % (x, (", ".join(VALID_TYPES))))
             else:
                 filters['types'].append(x)
 
-    app = RmaApplication({'host': options.host, 'port': options.port, 'match': options.match, 'limit': options.limit,
-                          'filters': filters})
+    app = RmaApplication(host=options.host, port=options.port, db=options.db,
+                         password=options.password, match=options.match, limit=options.limit, filters=filters)
     app.run()
 
 

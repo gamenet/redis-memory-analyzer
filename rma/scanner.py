@@ -1,3 +1,5 @@
+import logging
+
 from rma.redis import *
 from tqdm import tqdm
 
@@ -7,6 +9,8 @@ class Scanner:
     Get all keys from Redis database with given match and limits. If limit specified would be retrieved not more then
     limit keys.
     """
+    logger = logging.getLogger(__name__)
+
     def __init__(self, redis, match="*", limit=0, accepted_types=None):
         """
         :param RmaRedis redis:
@@ -64,18 +68,18 @@ class Scanner:
             for key_tuple in self.batch_scan():
                 key_type, key_name = key_tuple
                 if not key_name:
-                    print('\r\nWarning! Scan iterator return key with empty name `` and type %s' % key_type)
+                    self.logger.warning('\r\nWarning! Scan iterator return key with empty name `` and type %s' % key_type)
                     continue
 
                 to_id = redis_type_to_id(key_type)
                 if to_id in self.accepted_types:
-                   self.keys[to_id].append(key_name.decode("utf-8"))
+                    self.keys[to_id].append(key_name.decode("utf-8"))
 
                 progress.update()
 
                 total += 1
                 if total > limit:
-                    print("\r\nLimit %s reached" % (limit))
+                    logging.info("\r\nLimit %s reached" % (limit))
                     break
 
         return self.keys

@@ -1,5 +1,6 @@
 import sys
 import fnmatch
+import logging
 
 from rma.redis import *
 from rma.scanner import Scanner
@@ -9,20 +10,6 @@ from rma.rule import *
 from rma.reporters import *
 from rma.helpers import *
 from redis.exceptions import ConnectionError, ResponseError
-
-# print(r.eval("""
-#     local ret = redis.call("KEYS", "*")
-#     local z = 0
-#     for i = 1, #ret do
-#         local type1 = redis.call("TYPE", ret[i])["ok"]
-#         if type1 ~= "hash" then
-#             redis.call("del", ret[i])
-#             z = z  + 1
-#         end
-#     end
-#     return z
-# """, 0))
-# return
 
 
 def connect_to_redis(host, port, db=0, password=None):
@@ -70,17 +57,23 @@ class RmaApplication:
         REDIS_TYPE_ID_ZSET: [],
     }
 
-    def __init__(self, options):
-        self.options = options
+    def __init__(self, host="127.0.0.1", port=6367, password=None, db=0, match="*", limit=0, filters=None, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
+
         self.splitter = SimpleSplitter()
         self.reporter = TextReporter()
-        if 'filters' in options:
-            if 'types' in options['filters']:
-                self.types = list(map(redis_type_to_id, options['filters']['types']))
+        self.redis = connect_to_redis(host=host, port=port, db=db, password=password)
+
+        self.match = match
+        self.limit = limit if limit != 0 else sys.maxsize
+
+        if 'filters' in filters:
+            if 'types' in filters['filters']:
+                self.types = list(map(redis_type_to_id, filters['filters']['types']))
             else:
                 self.types = REDIS_TYPE_ID_ALL
-            if 'behaviour' in options['filters']:
-                self.behaviour = options['filters']['behaviour']
+            if 'behaviour' in filters['filters']:
+                self.behaviour = filters['filters']['behaviour']
             else:
                 self.behaviour = 'all'
         else:
@@ -104,25 +97,22 @@ class RmaApplication:
         self.types_rules[REDIS_TYPE_ID_ZSET].append(KeyString(redis=redis))
 
     def run(self):
-        r = connect_to_redis(host=self.options['host'], port=self.options['port'])
+        self.init_types_rules(redis=self.redis)
+        self.init_globals(redis=self.redis)
 
-        self.init_globals(redis=r)
-        self.init_types_rules(redis=r)
+        str_res = []
+        is_all = self.behaviour == 'all'
+        with Scanner(redis=self.redis, match=self.match, accepted_types=self.types) as scanner:
+            res = scanner.scan(limit=self.limit)
 
-        with Scanner(redis=r, match=self.options['match'], accepted_types=self.types) as scanner:
-            scanner_limit = self.options['limit'] if 'limit' != 0 in self.options else sys.maxsize
-            res = scanner.scan(limit=scanner_limit)
-
-            str_res = []
-            is_all = self.behaviour == 'all'
             if self.behaviour == 'global' or is_all:
                 str_res += self.do_globals()
             if self.behaviour == 'scanner' or is_all:
-                str_res += self.do_scanner(r, res)
+                str_res += self.do_scanner(self.redis, res)
             if self.behaviour == 'ram' or is_all:
                 str_res += self.do_ram(res)
 
-            self.reporter.print(str_res)
+        self.reporter.print(str_res)
 
     def do_globals(self):
         res = ['Server stat']
@@ -151,7 +141,7 @@ class RmaApplication:
         for key, data in res.items():
             aggregate_patterns = self.get_pattern_aggregated_data(data, key)
 
-            if key in self.types_rules:
+            if key in self.types_rules and key in self.types:
                 ret.append("Processing {0}".format(type_id_to_redis_type(key)))
                 for rule in self.types_rules[key]:
                     ret += (rule.analyze(aggregate_patterns))
@@ -161,8 +151,8 @@ class RmaApplication:
     def get_pattern_aggregated_data(self, data, key):
         split_patterns = self.splitter.split(data)
 
-        print("\r\nType %s" % type_id_to_redis_type(key))
-        print(split_patterns)
+        self.logger.debug("Type %s" % type_id_to_redis_type(key))
+        self.logger.debug(split_patterns)
 
         aggregate_patterns = {item: [] for item in split_patterns}
         for pattern in split_patterns:
