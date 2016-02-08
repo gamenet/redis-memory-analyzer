@@ -10,12 +10,15 @@ class GlobalKeySpace:
 
     def analyze(self, keys=[]):
         total_keys = self.redis.total_keys()
+        keys_ = [
+            ["Total keys in db", total_keys],
+            ["RedisDB key space overhead", dict_overhead(total_keys)]
+        ]
+        keys_ += [["Used `{0}`".format(key), value] for key, value in self.redis.config_get("*max-*-*").items()]
+
         return [
             {
                 'headers': ['Stat', "Value"],
-                'data': [
-                    ["Total keys in db", total_keys],
-                    ["RedisDB key space overhead", dict_overhead(total_keys)]
-                ]
+                'data': keys_
             }
         ]
