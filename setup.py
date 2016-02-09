@@ -3,9 +3,11 @@
 from rma import __version__
 
 long_description = '''
-Analyze Redis memory and show the RAM bottlenecks
-
-Rma is a memory profiler for Redis.
+RMA is a console tool to scan Redis key space in real time and aggregate memory usage statistic by key patterns. You may
+use this tools without maintenance on production servers. You can scanning by all or selected Redis types such as "string",
+"hash", "list", "set", "zset" and use matching pattern as you like. RMA try to discern key names by patterns, for example
+if you have keys like 'user:100' and 'user:101' application would pick out common pattern 'user:*' in output so you can
+analyze most memory distressed data in your instance.
 '''
 
 sdict = {
@@ -29,7 +31,7 @@ sdict = {
         ],
     },
     'classifiers': [
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
