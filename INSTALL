@@ -1,0 +1,4 @@
+Please use
+    python setup.py install
+
+To report errors or create a new issue on Github use https://github.com/gamenet/redis-memory-analyzer/issues
