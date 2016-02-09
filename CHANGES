@@ -1,3 +1,6 @@
+* 0.1.1
+    * Prepare to pip distribution
+
 * 0.1.0
     * Initial version
     * Strings, Hash, Set, List are supported
