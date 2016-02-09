@@ -10,7 +10,7 @@ class Scanner:
     """
     logger = logging.getLogger(__name__)
 
-    def __init__(self, redis, match="*", limit=0, accepted_types=None):
+    def __init__(self, redis, match="*", accepted_types=None):
         """
         :param RmaRedis redis:
         :param str match: Wild card match supported in Redis SCAN command
@@ -61,13 +61,16 @@ class Scanner:
         ret.clear()
 
     def scan(self, limit=1000):
-        with tqdm(total=min(limit, self.redis.total_keys()), desc="Match {0}".format(self.match), miniters=1000) as progress:
+        with tqdm(total=min(limit, self.redis.total_keys()), desc="Match {0}".format(self.match),
+                  miniters=1000) as progress:
+
             total = 0
 
             for key_tuple in self.batch_scan():
                 key_type, key_name = key_tuple
                 if not key_name:
-                    self.logger.warning('\r\nWarning! Scan iterator return key with empty name `` and type %s' % key_type)
+                    self.logger.warning(
+                        '\r\nWarning! Scan iterator return key with empty name `` and type %s' % key_type)
                     continue
 
                 to_id = redis_type_to_id(key_type)
@@ -78,7 +81,7 @@ class Scanner:
 
                 total += 1
                 if total > limit:
-                    logging.info("\r\nLimit %s reached" % (limit))
+                    logging.info("\r\nLimit {0} reached".format(limit))
                     break
 
         return self.keys

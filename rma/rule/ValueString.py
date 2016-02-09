@@ -3,6 +3,50 @@ from rma.redis import *
 from rma.helpers import *
 
 
+class RealStringEntry:
+    def get_int_encoded_bytes(self, redis, key_name):
+        try:
+            num_value = int(redis.get(key_name))
+            if num_value < REDIS_SHARED_INTEGERS:
+                return 0
+            else:
+                return size_of_pointer_fn()
+        except ValueError:
+            pass
+
+        return size_of_pointer_fn()
+
+    def __init__(self, key_name, redis):
+        """
+        :param key_name:
+        :param RmaRedis redis:
+        :return:
+        """
+
+        self.logger = logging.getLogger(__name__)
+        try:
+            self.encoding = redis.object("ENCODING", key_name).decode('utf8')
+        except AttributeError as e:
+            self.logger.warning("Invalid encoding from server for key `%s`" % key_name)
+            self.encoding = REDIS_ENCODING_EMBSTR
+        if self.encoding == REDIS_ENCODING_INT:
+            self.useful_bytes = self.get_int_encoded_bytes(redis, key_name)
+            self.free_bytes = 0
+            self.aligned = size_of_aligned_string_by_size(self.useful_bytes, encoding=self.encoding)
+        elif self.encoding == REDIS_ENCODING_EMBSTR or self.encoding == REDIS_ENCODING_RAW:
+            sdslen_response = redis.debug_sdslen(key_name)
+            self.useful_bytes = sdslen_response['val_sds_len']
+            self.free_bytes = sdslen_response['val_sds_avail']
+            sds_len = 8 + self.useful_bytes + self.free_bytes + 1
+            self.aligned = size_of_aligned_string_by_size(sds_len, encoding=self.encoding)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
 class ValueString:
     def __init__(self, redis):
         self.redis = redis
@@ -33,15 +77,23 @@ class ValueString:
             prefered_encoding = pref_encoding(encodings)
 
             min_bytes = min(used_bytes)
-            mean = statistics.mean(used_bytes) if total_elements > 1 else min_bytes;
+            mean = statistics.mean(used_bytes) if total_elements > 1 else min_bytes
 
             stat_entry = [
-                pattern, total_elements, used_user, free_user, aligned, aligned / (used_user if used_user > 0 else 1), prefered_encoding,
-                min_bytes, max(used_bytes), mean,
+                pattern,
+                total_elements,
+                used_user,
+                free_user,
+                aligned,
+                aligned / (used_user if used_user > 0 else 1),
+                prefered_encoding,
+                min_bytes,
+                max(used_bytes),
+                mean,
             ]
             key_stat['data'].append(stat_entry)
 
-        key_stat['data'].sort(key=lambda x: x[1], reverse=True)
+        key_stat['data'].sort(key=lambda e: e[1], reverse=True)
         key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, 0, sum, 0, '', 0, 0, 0]))
 
         return [

@@ -10,5 +10,6 @@ class JemallocTestCase(unittest.TestCase):
         pass
 
     def test_align(self):
-        for given, expeted in [[79, 80], [253, 256], [512, 512], [513, 768], [3645, 3840], [4098, 8192], [4200304, 8388608]]:
-            self.assertEqual(Jemalloc.align(given), expeted)
+        data = [[79, 80], [253, 256], [512, 512], [513, 768], [3645, 3840], [4098, 8192], [4200304, 8388608]]
+        for given, expected in data:
+            self.assertEqual(Jemalloc.align(given), expected)

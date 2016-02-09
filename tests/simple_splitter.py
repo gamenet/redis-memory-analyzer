@@ -9,4 +9,4 @@ class SplitterTestCase(unittest.TestCase):
         pass
 
     def test_align(self):
-        self.assertEqual(1,1)
+        self.assertEqual(1, 1)

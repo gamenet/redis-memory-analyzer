@@ -22,7 +22,7 @@ class SetStatEntry:
             self.valueUsedBytes = sum((len(x) for x in self.values))
             self.valueAlignedBytes = sum(map(size_of_aligned_string, self.values))
             self.total = self.valueAlignedBytes + self.system
-        elif self.encoding =='intset':
+        elif self.encoding == 'intset':
             self.system = intset_overhead(self.count)
             # In case if intset valueAlignedBytes already contains system overhead
             self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
@@ -79,7 +79,7 @@ class Set:
                 agg.fieldAvgCount,
                 agg.valueUsedBytes,
                 agg.valueAlignedBytes,
-                agg.valueAlignedBytes/ (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
+                agg.valueAlignedBytes / (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
                 agg.system,
                 agg.encoding,
                 agg.total

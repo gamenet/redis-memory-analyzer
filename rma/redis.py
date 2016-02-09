@@ -89,7 +89,6 @@ def get_redis_object_overhead():
         void *ptr;
     } robj;
 
-    :param length:
     :return:
     """
     return 4 + 4 + 8 + 8 + size_of_pointer_fn()
@@ -124,7 +123,6 @@ def size_of_aligned_string(value, encoding=""):
 
     str_len = size_of_sds_string(value, encoding)
     return size_of_aligned_string_by_size(str_len, encoding)
-
 
 
 def size_of_aligned_string_by_size(sdslen, encoding):
@@ -200,64 +198,6 @@ def intset_aligned(value):
         return Jemalloc.align(4 + overhead)
 
     return Jemalloc.align(8 + overhead)
-
-
-class StringEntry:
-    def __init__(self, value=""):
-        self.encoding = get_string_encoding(value)
-        self.useful_bytes = len(value)
-        self.free_bytes = 0
-        self.aligned = size_of_aligned_string(value, encoding=self.encoding)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc):
-        return False
-
-
-class RealStringEntry:
-    def get_int_encoded_bytes(self, redis, key_name):
-        try:
-            num_value = int(redis.get(key_name))
-            if num_value < REDIS_SHARED_INTEGERS:
-                return 0
-            else:
-                return size_of_pointer_fn()
-        except ValueError:
-            pass
-
-        return size_of_pointer_fn()
-
-    def __init__(self, key_name, redis):
-        """
-        :param key_name:
-        :param RmaRedis redis:
-        :return:
-        """
-
-        self.logger = logging.getLogger(__name__)
-        try:
-            self.encoding = redis.object("ENCODING", key_name).decode('utf8')
-        except AttributeError as e:
-            self.logger.warning("Invalid encoding from server for key `%s`" % key_name)
-            self.encoding = REDIS_ENCODING_EMBSTR
-        if self.encoding == REDIS_ENCODING_INT:
-            self.useful_bytes = self.get_int_encoded_bytes(redis, key_name)
-            self.free_bytes = 0
-            self.aligned = size_of_aligned_string_by_size(self.useful_bytes, encoding=self.encoding)
-        elif self.encoding == REDIS_ENCODING_EMBSTR or self.encoding == REDIS_ENCODING_RAW:
-            sdslen_response = redis.debug_sdslen(key_name)
-            self.useful_bytes = sdslen_response['val_sds_len']
-            self.free_bytes = sdslen_response['val_sds_avail']
-            sds_len = 8 + self.useful_bytes + self.free_bytes + 1
-            self.aligned = size_of_aligned_string_by_size(sds_len, encoding=self.encoding)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc):
-        return False
 
 
 def parse_debug(response):

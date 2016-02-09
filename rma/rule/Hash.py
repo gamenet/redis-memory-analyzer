@@ -30,7 +30,7 @@ class HashStatEntry:
             self.system = dict_overhead(self.count)
             self.fieldAlignedBytes = sum(map(size_of_aligned_string, self.keys))
             self.valueAlignedBytes = sum(map(size_of_aligned_string, self.values))
-        elif self.encoding =='ziplist':
+        elif self.encoding == 'ziplist':
             self.system = ziplist_overhead(self.count)
             self.fieldAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.keys))
             self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
@@ -80,7 +80,8 @@ class Hash:
 
     def analyze(self, keys):
         key_stat = {
-            'headers': ['Match', "Count", "Avg key count", "Key mem", "Real", "Ratio", "Value mem", "Real", "Ratio", "System", "Encoding", "Total mem","Total aligned" ],
+            'headers': ['Match', "Count", "Avg key count", "Key mem", "Real", "Ratio", "Value mem", "Real", "Ratio",
+                        "System", "Encoding", "Total mem", "Total aligned"],
             'data': []
         }
         # Undone Prefered encoding
@@ -96,7 +97,7 @@ class Hash:
                 agg.fieldAlignedBytes / agg.fieldUsedBytes,
                 agg.valueUsedBytes,
                 agg.valueAlignedBytes,
-                agg.valueAlignedBytes/ (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
+                agg.valueAlignedBytes / (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
                 agg.system,
                 agg.encoding,
                 agg.fieldUsedBytes + agg.valueUsedBytes,
@@ -106,7 +107,8 @@ class Hash:
             key_stat['data'].append(stat_entry)
 
         key_stat['data'].sort(key=lambda x: x[12], reverse=True)
-        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, sum, sum, 0, sum, sum, 0, sum, '', sum, sum]))
+        key_stat['data'].append(
+            make_total_row(key_stat['data'], ['Total:', sum, 0, sum, sum, 0, sum, sum, 0, sum, '', sum, sum]))
 
         return [
             "Hash stat",

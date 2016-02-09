@@ -21,7 +21,7 @@ class ListStatEntry:
         if self.encoding == 'linkedlist':
             self.system = dict_overhead(self.count)
             self.valueAlignedBytes = sum(map(size_of_linkedlist_aligned_string, self.values))
-        elif self.encoding =='ziplist' or self.encoding =='quicklist':
+        elif self.encoding == 'ziplist' or self.encoding == 'quicklist':
             # Undone `quicklist`
             self.system = ziplist_overhead(self.count)
             self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
@@ -79,7 +79,7 @@ class List:
                 agg.fieldAvgCount,
                 agg.valueUsedBytes,
                 agg.valueAlignedBytes,
-                agg.valueAlignedBytes/ (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
+                agg.valueAlignedBytes / (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
                 agg.system,
                 agg.encoding,
                 agg.valueAlignedBytes + agg.system

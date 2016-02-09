@@ -1,8 +1,21 @@
+import statistics
 from rma.redis import *
 from rma.helpers import *
 from itertools import *
 
-import statistics
+
+class StringEntry:
+    def __init__(self, value=""):
+        self.encoding = get_string_encoding(value)
+        self.useful_bytes = len(value)
+        self.free_bytes = 0
+        self.aligned = size_of_aligned_string(value, encoding=self.encoding)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
 
 
 class KeyString:

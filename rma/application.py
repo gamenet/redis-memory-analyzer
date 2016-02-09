@@ -128,11 +128,11 @@ class RmaApplication:
         }
         total = r.total_keys()
         for key, data in res.items():
-            type = type_id_to_redis_type(key)
+            r_type = type_id_to_redis_type(key)
             aggregate_patterns = self.get_pattern_aggregated_data(data, key)
 
             for k, v in aggregate_patterns.items():
-                key_stat['data'].append([k, len(v), type, floored_percentage(len(v) / total, 2)])
+                key_stat['data'].append([k, len(v), r_type, floored_percentage(len(v) / total, 2)])
         key_stat['data'].sort(key=lambda x: x[1], reverse=True)
         return ["Keys by types", key_stat]
 
