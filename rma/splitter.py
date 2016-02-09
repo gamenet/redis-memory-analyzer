@@ -6,7 +6,6 @@ def dict_build(indict, pre=None):
     pre = pre[:] if pre else []
     if len(indict):
         for key, value in indict.items():
-            # pre.append(key)
             if len(value):
                 for d in dict_build(value, pre=pre+[key]):
                     yield d
@@ -29,7 +28,6 @@ def map_part_to_glob(index, part, x):
 class SimpleSplitter:
     def split(self, data, separator=":"):
         pass1 = map(lambda x: list(map_part_to_glob(i, y, x) for i, y in enumerate(x.split(separator))), data)
-        # print('Pass filter:', list(filter(lambda x: len(x) == 2, pass1)))
         pass2 = self.fold_to_tree(pass1)
         return self.unfold_to_list(pass2, separator)
 

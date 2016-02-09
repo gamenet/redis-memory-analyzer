@@ -1,5 +1,6 @@
 from rma.redis import *
 
+
 class GlobalKeySpace:
     def __init__(self, redis):
         """
@@ -8,7 +9,7 @@ class GlobalKeySpace:
         """
         self.redis = redis
 
-    def analyze(self, keys=[]):
+    def analyze(self, keys=None):
         total_keys = self.redis.total_keys()
 
         keys_ = [

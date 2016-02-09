@@ -1,5 +1,4 @@
 import logging
-
 from rma.redis import *
 from tqdm import tqdm
 
