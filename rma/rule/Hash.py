@@ -80,7 +80,7 @@ class Hash:
 
     def analyze(self, keys):
         key_stat = {
-            'headers': ['Match', "Count", "Avg key count", "Key mem", "Real", "Ratio", "Value mem", "Real", "Ratio",
+            'headers': ['Match', "Count", "Avg field count", "Key mem", "Real", "Ratio", "Value mem", "Real", "Ratio",
                         "System", "Encoding", "Total mem", "Total aligned"],
             'data': []
         }
