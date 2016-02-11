@@ -1,3 +1,8 @@
+* 0.1.2
+    * Fix issue with `no such key ` ResponseError during debug sdslen in Value String (github issue #1)
+    * Fix wrong behaviour if used non 0 db (github issue #2)
+    * Fix crash with ElastiCache because of `CONFIG` command is disallowed to use (github issue #3)
+
 * 0.1.1
     * Prepare to pip distribution
 
