@@ -10,7 +10,7 @@ class GlobalKeySpace:
         self.redis = redis
 
     def analyze(self, keys=None):
-        total_keys = self.redis.total_keys()
+        total_keys = self.redis.dbsize()
 
         keys_ = [
             ["Total keys in db", total_keys],

@@ -126,7 +126,7 @@ class RmaApplication:
             'headers': ['Match', "Count", "Type", "%"],
             'data': []
         }
-        total = r.total_keys()
+        total = r.dbsize()
         for key, data in res.items():
             r_type = type_id_to_redis_type(key)
             aggregate_patterns = self.get_pattern_aggregated_data(data, key)

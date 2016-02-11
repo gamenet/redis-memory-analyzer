@@ -61,7 +61,7 @@ class Scanner:
         ret.clear()
 
     def scan(self, limit=1000):
-        with tqdm(total=min(limit, self.redis.total_keys()), desc="Match {0}".format(self.match),
+        with tqdm(total=min(limit, self.redis.dbsize()), desc="Match {0}".format(self.match),
                   miniters=1000) as progress:
 
             total = 0

@@ -223,6 +223,3 @@ def parse_debug(response):
 class RmaRedis(StrictRedis):
     def debug_sdslen(self, key):
         return parse_debug(self.execute_command("DEBUG SDSLEN", key))
-
-    def total_keys(self):
-        return self.info('keyspace')['db0']['keys']
