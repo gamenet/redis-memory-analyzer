@@ -24,6 +24,34 @@ To install from source :
     cd redis-memory-analyzer
     sudo python setup.py install
 
+## Running
+
+After install used it from console:
+
+```
+>rma --help
+Usage: rma-script.py [options]
+
+Example : rma-script.py -m * --type hash
+
+Options:
+  -h, --help                            Show this help message and exit
+  -s HOST, --server=HOST                Redis Server hostname. Defaults to 127.0.0.1
+  -p PORT, --port=PORT                  Redis Server port. Defaults to 6379
+  -a PASSWORD, --password=PASSWORD      Password to use when connecting to the server
+  -d DB, --db=DB                        Database number, defaults to 0
+  -m MATCH, --match=MATCH               Keys pattern to match
+  -l LIMIT, --limit=LIMIT               Get max key matched by pattern
+  -b BEHAVIOUR, --behaviour=BEHAVIOUR   Specify application working mode
+  -t TYPES, --type=TYPES                Data types to include. Possible values are string,
+                                        hash, list, set. Multiple types can be provided.
+                                        If not specified, all data types will be returned
+```
+
+If you have large database try running first with `--limit` option to run first limited amount of keys. Also run with `--types`
+ to limit only specified Redis types in large database. Not this tool has performance issues - call encoding for individual
+ keys instead if batch queue with LUA (like in scanner does). So this option may be very useful.
+
 ## Internals
 
 RMA shows statistics separated by types. You can choose what kind of data would be aggregated from Redis node using
