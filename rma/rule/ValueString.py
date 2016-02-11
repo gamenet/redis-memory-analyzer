@@ -1,6 +1,7 @@
 import statistics
 from rma.redis import *
 from rma.helpers import *
+from redis.exceptions import RedisError
 
 
 class RealStringEntry:
@@ -27,8 +28,13 @@ class RealStringEntry:
         try:
             self.encoding = redis.object("ENCODING", key_name).decode('utf8')
         except AttributeError as e:
-            self.logger.warning("Invalid encoding from server for key `%s`" % key_name)
+            self.logger.warning("Invalid encoding from server for key `%s` (would be skipped)" % key_name)
             self.encoding = REDIS_ENCODING_EMBSTR
+            self.useful_bytes = 0
+            self.free_bytes = 0
+            self.aligned = 0
+            return
+
         if self.encoding == REDIS_ENCODING_INT:
             self.useful_bytes = self.get_int_encoded_bytes(redis, key_name)
             self.free_bytes = 0
@@ -37,6 +43,7 @@ class RealStringEntry:
             sdslen_response = redis.debug_sdslen(key_name)
             self.useful_bytes = sdslen_response['val_sds_len']
             self.free_bytes = sdslen_response['val_sds_avail']
+            # INFO Rewrite this to support Redis >= 3.2 sds dynamic header
             sds_len = 8 + self.useful_bytes + self.free_bytes + 1
             self.aligned = size_of_aligned_string_by_size(sds_len, encoding=self.encoding)
 
@@ -50,6 +57,7 @@ class RealStringEntry:
 class ValueString:
     def __init__(self, redis):
         self.redis = redis
+        self.logger = logging.getLogger(__name__)
 
     def analyze(self, keys):
         key_stat = {
@@ -63,12 +71,16 @@ class ValueString:
             aligned_bytes = []
             encodings = []
 
-            for x in data:
-                with RealStringEntry(key_name=x, redis=self.redis) as stat:
-                    used_bytes.append(stat.useful_bytes)
-                    free_bytes.append(stat.free_bytes)
-                    aligned_bytes.append(stat.aligned)
-                    encodings.append(stat.encoding)
+            for key_name in data:
+                try:
+                    with RealStringEntry(key_name=key_name, redis=self.redis) as stat:
+                        used_bytes.append(stat.useful_bytes)
+                        free_bytes.append(stat.free_bytes)
+                        aligned_bytes.append(stat.aligned)
+                        encodings.append(stat.encoding)
+                except RedisError as e:
+                    # This code works in real time so key me be deleted and this code fail
+                    self.logger.warning(repr(e))
 
             total_elements = len(used_bytes)
             used_user = sum(used_bytes)

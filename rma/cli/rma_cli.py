@@ -11,7 +11,7 @@ VALID_MODES = ('all', 'scanner', 'ram', 'global')
 
 
 def main():
-    usage = """usage: %prog [options] /path/to/dump.rdb
+    usage = """usage: %prog [options]
 
 Example : %prog -m * --type hash"""
 
@@ -31,7 +31,7 @@ Example : %prog -m * --type hash"""
     parser.add_option("-b", "--behaviour", dest="behaviour", default="all",
                       help="Specify application working mode")
     parser.add_option("-t", "--type", dest="types", action="append",
-                      help="""Data types to include. Possible values are string, hash, list. Multiple types can be provided.
+                      help="""Data types to include. Possible values are string, hash, list, set. Multiple types can be provided.
                     If not specified, all data types will be returned""")
 
     (options, args) = parser.parse_args()
