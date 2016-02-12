@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-
+import time
 import logging
-from optparse import OptionParser
+from argparse import ArgumentParser, HelpFormatter
 from rma.application import RmaApplication
 
 logging.basicConfig(level=logging.INFO)
@@ -10,31 +10,63 @@ VALID_TYPES = ("string", "hash", "list", "set", "zset")
 VALID_MODES = ('all', 'scanner', 'ram', 'global')
 
 
+class CustomHelpFormatter(HelpFormatter):
+    def __init__(self, prog):
+        super().__init__(prog, max_help_position=40, width=80)
+
+    def _format_action_invocation(self, action):
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        default = self._get_default_metavar_for_optional(action)
+        args_string = self._format_args(action, default)
+        return ', '.join(action.option_strings) + ' ' + args_string
+
+
+def parser_formatter(prog):
+    return CustomHelpFormatter(prog)
+
+
 def main():
-    usage = """usage: %prog [options]
+    description = """RMA is used to scan Redis key space in and aggregate memory usage statistic by key patterns."""
 
-Example : %prog -m * --type hash"""
+    parser = ArgumentParser(prog='rma', description=description, formatter_class=parser_formatter)
+    parser.add_argument("-s", "--server",
+                        dest="host",
+                        default="127.0.0.1",
+                        help="Redis Server hostname. Defaults to 127.0.0.1")
+    parser.add_argument("-p", "--port",
+                        dest="port",
+                        default=6379,
+                        type=int,
+                        help="Redis Server port. Defaults to 6379")
+    parser.add_argument("-a", "--password",
+                        dest="password",
+                        help="Password to use when connecting to the server")
+    parser.add_argument("-d", "--db",
+                        dest="db",
+                        default=0,
+                        help="Database number, defaults to 0")
+    parser.add_argument("-m", "--match",
+                        dest="match",
+                        default="*",
+                        help="Keys pattern to match")
+    parser.add_argument("-l", "--limit",
+                        dest="limit",
+                        default="0",
+                        type=int,
+                        help="Get max key matched by pattern")
+    parser.add_argument("-b", "--behaviour",
+                        dest="behaviour",
+                        default="all",
+                        help="Specify application working mode. Allowed values are" + ', '.join(VALID_MODES))
+    parser.add_argument("-t", "--type",
+                        dest="types",
+                        action="append",
+                        help="""Data types to include. Possible values are string, hash, list, set.
+                              Multiple types can be provided. If not specified, all data types will be returned.
+                              Allowed values are""" + ', '.join(VALID_TYPES))
 
-    parser = OptionParser(usage=usage)
-    parser.add_option("-s", "--server", dest="host", default="127.0.0.1",
-                      help="Redis Server hostname. Defaults to 127.0.0.1")
-    parser.add_option("-p", "--port", dest="port", default=6379, type="int",
-                      help="Redis Server port. Defaults to 6379")
-    parser.add_option("-a", "--password", dest="password",
-                      help="Password to use when connecting to the server")
-    parser.add_option("-d", "--db", dest="db", default=0,
-                      help="Database number, defaults to 0")
-    parser.add_option("-m", "--match", dest="match", default="*",
-                      help="Keys pattern to match")
-    parser.add_option("-l", "--limit", dest="limit", default="0", type="int",
-                      help="Get max key matched by pattern")
-    parser.add_option("-b", "--behaviour", dest="behaviour", default="all",
-                      help="Specify application working mode")
-    parser.add_option("-t", "--type", dest="types", action="append",
-                      help="""Data types to include. Possible values are string, hash, list, set. Multiple types can be provided.
-                    If not specified, all data types will be returned""")
-
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
 
     filters = {}
     if options.match:
@@ -43,7 +75,8 @@ Example : %prog -m * --type hash"""
     if options.behaviour:
         if options.behaviour not in VALID_MODES:
             raise Exception(
-                'Invalid behaviour provided - %s. Expected one of %s' % (options.behaviour, (", ".join(VALID_TYPES))))
+                    'Invalid behaviour provided - %s. Expected one of %s' % (
+                        options.behaviour, (", ".join(VALID_TYPES))))
         else:
             filters['behaviour'] = options.behaviour
 
@@ -57,7 +90,10 @@ Example : %prog -m * --type hash"""
 
     app = RmaApplication(host=options.host, port=options.port, db=options.db,
                          password=options.password, match=options.match, limit=options.limit, filters=filters)
+
+    start_time = time.clock()
     app.run()
+    print("\r\nDone in %s seconds" % (time.clock() - start_time))
 
 
 if __name__ == '__main__':

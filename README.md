@@ -1,5 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/rma.svg)](https://badge.fury.io/py/rma)
 [![Build Status](https://travis-ci.org/gamenet/redis-memory-analyzer.svg?branch=master)](https://travis-ci.org/gamenet/redis-memory-analyzer)
+[![Code Health](https://landscape.io/github/gamenet/redis-memory-analyzer/master/landscape.svg?style=flat-square)](https://landscape.io/github/gamenet/redis-memory-analyzer/master)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/gamenet/redis-memory-analyzer/master/LICENSE)
 
 Redis Memory Analyzer
@@ -34,34 +35,47 @@ After install used it from console:
 
 ```
 >rma --help
-Usage: rma-script.py [options]
+usage: rma [-h] [-s HOST] [-p PORT] [-a PASSWORD] [-d DB] [-m MATCH] [-l LIMIT]
+           [-b BEHAVIOUR] [-t TYPES]
 
-Example : rma-script.py -m * --type hash
+RMA is used to scan Redis key space in and aggregate memory usage statistic by
+key patterns.
 
-Options:
-  -h, --help                            Show this help message and exit
-  -s HOST, --server=HOST                Redis Server hostname. Defaults to 127.0.0.1
-  -p PORT, --port=PORT                  Redis Server port. Defaults to 6379
-  -a PASSWORD, --password=PASSWORD      Password to use when connecting to the server
-  -d DB, --db=DB                        Database number, defaults to 0
-  -m MATCH, --match=MATCH               Keys pattern to match
-  -l LIMIT, --limit=LIMIT               Get max key matched by pattern
-  -b BEHAVIOUR, --behaviour=BEHAVIOUR   Specify application working mode
-  -t TYPES, --type=TYPES                Data types to include. Possible values are string,
-                                        hash, list, set. Multiple types can be provided.
-                                        If not specified, all data types will be returned
+optional arguments:
+  -h, --help                 show this help message and exit
+  -s, --server HOST          Redis Server hostname. Defaults to 127.0.0.1
+  -p, --port PORT            Redis Server port. Defaults to 6379
+  -a, --password PASSWORD    Password to use when connecting to the server
+  -d, --db DB                Database number, defaults to 0
+  -m, --match MATCH          Keys pattern to match
+  -l, --limit LIMIT          Get max key matched by pattern
+  -b, --behaviour BEHAVIOUR  Specify application working mode. Allowed values
+                             areall, scanner, ram, global
+  -t, --type TYPES           Data types to include. Possible values are string,
+                             hash, list, set. Multiple types can be provided. If
+                             not specified, all data types will be returned.
+                             Allowed values arestring, hash, list, set, zset
 ```
 
 If you have large database try running first with `--limit` option to run first limited amount of keys. Also run with `--types`
  to limit only specified Redis types in large database. Not this tool has performance issues - call encoding for individual
- keys instead if batch queue with LUA (like in scanner does). So this option may be very useful.
+ keys instead if batch queue with LUA (like in scanner does). So this option may be very useful. You can choose what
+ kind of data would be aggregated from Redis node using `-b (--behaviour)` option as console argument. Supported
+ behaviours are 'global', 'scanner', 'ram' and 'all'.
+
 
 ## Internals
 
-RMA shows statistics separated by types. You can choose what kind of data would be aggregated from Redis node using
-`-b (--behaviour)` option as console argument.
+RMA shows statistics separated by types. All works in application separated by few steps:
 
-### Global output
+ 1. Load type and encoding for each key matched by given pattern with Lua scripting in batch mode. `SCAN` used to
+    iterate keys from Redis key db.
+ 2. Separate keys by types and match patterns.
+ 3. Run behaviours and rules for given data set.
+ 4. Output result with given reported (now only TextReported implemented)
+
+
+### Global output ('global' behaviour)
 
 The global data is some Redis server statistics which helps you to understand other data from this tools:
 
@@ -79,7 +93,7 @@ The global data is some Redis server statistics which helps you to understand ot
 The one of interesting things here is "RedisDB key space overhead". The amount of memory used Redis to store key space
 data. If you have lots of keys in your Redis instance this actually shows your overhead for this.
 
-### Key types
+### Key types ('scanner' behaviour)
 
 This table helps then you do not know actually that kind of keys stored in your Redis database. For example then DevOps or
 system administrator want to understand what kind of keys stored in Redis instance. Which data structure is most used in
@@ -95,7 +109,7 @@ system. This also helps if you are new to some big project - this kind of `SHOW 
 
 ```
 
-### Data related output
+### Data related output ('ram' behaviour)
 
 All output separated by keys and values statistics. This division is used because:
 1. Keys of any type in Redis actually stored in RedisDB internal data structure based on dict (more about this on [RedisPlanet](http://redisplanet.com/)).

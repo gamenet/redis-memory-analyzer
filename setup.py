@@ -45,4 +45,4 @@ try:
 except ImportError:
     from distutils.core import setup
 
-setup(**sdict, requires=['tqdm', 'tabulate', 'redis'])
+setup(**sdict, requires=['tqdm', 'tabulate', 'redis', 'msgpack-python'])

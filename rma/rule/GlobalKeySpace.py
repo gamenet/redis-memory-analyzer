@@ -1,9 +1,9 @@
 import logging
-from rma.redis import *
+from rma.redis import dict_overhead
 from redis.exceptions import ResponseError
 
 
-class GlobalKeySpace:
+class GlobalKeySpace(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:
@@ -12,7 +12,7 @@ class GlobalKeySpace:
         self.redis = redis
         self.logger = logging.getLogger(__name__)
 
-    def analyze(self, keys=None):
+    def analyze(self):
         total_keys = self.redis.dbsize()
 
         keys_ = [
@@ -22,7 +22,7 @@ class GlobalKeySpace:
         try:
             keys_ += [["Used `{0}`".format(key), value] for key, value in self.redis.config_get("*max-*-*").items()]
         except ResponseError as e:
-            self.logger.warning("*max* option skipped: %s" % repr(e))
+            self.logger.warning("*max* option skipped: {0}".format(repr(e)))
 
         keys_ += [["Info `{0}`".format(key), value] for key, value in self.redis.info('memory').items()]
 

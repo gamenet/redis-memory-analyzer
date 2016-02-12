@@ -2,14 +2,16 @@ import sys
 import fnmatch
 import logging
 
-from rma.redis import *
+from rma.redis import RmaRedis
 from rma.scanner import Scanner
-from rma.splitter import *
-
+from rma.splitter import SimpleSplitter
+from rma.redis_types import *
 from rma.rule import *
 from rma.reporters import *
-from rma.helpers import *
-from redis.exceptions import ConnectionError, ResponseError
+from rma.helpers import floored_percentage
+
+from collections import defaultdict
+from redis.exceptions import ResponseError
 
 
 def connect_to_redis(host, port, db=0, password=None):
@@ -46,7 +48,7 @@ def check_redis_version(redis):
         return False
 
 
-class RmaApplication:
+class RmaApplication(object):
     globals = []
 
     types_rules = {
@@ -103,14 +105,20 @@ class RmaApplication:
         str_res = []
         is_all = self.behaviour == 'all'
         with Scanner(redis=self.redis, match=self.match, accepted_types=self.types) as scanner:
-            res = scanner.scan(limit=self.limit)
+            keys = defaultdict(list)
+            for v in scanner.scan(limit=self.limit):
+                keys[v["type"]].append(v)
 
+            print("Aggregating keys by pattern and type")
+            keys = {k: self.get_pattern_aggregated_data(v) for k, v in keys.items()}
+
+            print("Apply rules")
             if self.behaviour == 'global' or is_all:
                 str_res += self.do_globals()
             if self.behaviour == 'scanner' or is_all:
-                str_res += self.do_scanner(self.redis, res)
+                str_res += self.do_scanner(self.redis, keys)
             if self.behaviour == 'ram' or is_all:
-                str_res += self.do_ram(res)
+                str_res += self.do_ram(keys)
 
         self.reporter.print(str_res)
 
@@ -127,20 +135,20 @@ class RmaApplication:
             'data': []
         }
         total = r.dbsize()
-        for key, data in res.items():
+        for key, aggregate_patterns in res.items():
+            self.logger.debug("Processing type %s" % type_id_to_redis_type(key))
             r_type = type_id_to_redis_type(key)
-            aggregate_patterns = self.get_pattern_aggregated_data(data, key)
 
             for k, v in aggregate_patterns.items():
                 key_stat['data'].append([k, len(v), r_type, floored_percentage(len(v) / total, 2)])
+
         key_stat['data'].sort(key=lambda x: x[1], reverse=True)
         return ["Keys by types", key_stat]
 
     def do_ram(self, res):
         ret = []
-        for key, data in res.items():
-            aggregate_patterns = self.get_pattern_aggregated_data(data, key)
-
+        for key, aggregate_patterns in res.items():
+            self.logger.debug("Processing type %s" % type_id_to_redis_type(key))
             if key in self.types_rules and key in self.types:
                 ret.append("Processing {0}".format(type_id_to_redis_type(key)))
                 for rule in self.types_rules[key]:
@@ -148,14 +156,12 @@ class RmaApplication:
 
         return ret
 
-    def get_pattern_aggregated_data(self, data, key):
-        split_patterns = self.splitter.split(data)
-
-        self.logger.debug("Type %s" % type_id_to_redis_type(key))
+    def get_pattern_aggregated_data(self, data):
+        split_patterns = self.splitter.split((obj["name"] for obj in data))
         self.logger.debug(split_patterns)
 
         aggregate_patterns = {item: [] for item in split_patterns}
         for pattern in split_patterns:
-            aggregate_patterns[pattern] = list(filter(lambda x: fnmatch.fnmatch(x, pattern), data))
+            aggregate_patterns[pattern] = list(filter(lambda obj: fnmatch.fnmatch(obj["name"], pattern), data))
 
         return aggregate_patterns

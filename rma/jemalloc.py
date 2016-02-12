@@ -1,7 +1,7 @@
-from rma.helpers import *
+from rma.helpers import is_power2, min_ge
 
 
-class Jemalloc:
+class Jemalloc(object):
     """
     Small: All 2^n-aligned allocations of size 2^n will incur no additional overhead, due to how small allocations are
     aligned and packed.

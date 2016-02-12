@@ -1,53 +1,54 @@
-from rma.redis import *
-from itertools import tee
-from rma.helpers import *
-
 import statistics
+from itertools import tee
+from rma.redis import *
+from rma.helpers import pref_encoding, make_total_row
 
 
-class ListStatEntry:
-    def __init__(self, key_name, redis):
+class ListStatEntry(object):
+    def __init__(self, info, redis):
         """
         :param key_name:
         :param RmaRedis redis:
         :return:
         """
+        key_name = info["name"]
+        self.encoding = info['encoding']
+
         self.values = redis.lrange(key_name, 0, -1)
-        self.encoding = redis.object('encoding', key_name).decode('utf8')
         self.count = len(self.values)
 
-        m, m2, m3 = tee((len(x) for x in self.values), 3)
+        used_bytes_iter, min_iter, max_iter = tee((len(x) for x in self.values), 3)
 
-        if self.encoding == 'linkedlist':
+        if self.encoding == REDIS_ENCODING_ID_LINKEDLIST:
             self.system = dict_overhead(self.count)
             self.valueAlignedBytes = sum(map(size_of_linkedlist_aligned_string, self.values))
-        elif self.encoding == 'ziplist' or self.encoding == 'quicklist':
+        elif self.encoding == REDIS_ENCODING_ID_ZIPLIST or self.encoding == REDIS_ENCODING_ID_QUICKLIST:
             # Undone `quicklist`
             self.system = ziplist_overhead(self.count)
             self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
         else:
             raise Exception('Panic', 'Unknown encoding %s in %s' % (self.encoding, key_name))
 
-        self.valueUsedBytes = sum(m)
-        self.valueMin = min(m2)
-        self.valueMax = max(m3)
+        self.valueUsedBytes = sum(used_bytes_iter)
+        self.valueMin = min(min_iter)
+        self.valueMax = max(max_iter)
 
 
-class ListAggreegator:
+class ListAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
-        g00, g0, g1, g2, g3, g4, v1, v2 = tee(all_obj, 8)
+        encode_iter, sys_iter, avg_iter, value_used_iter, value_align_iter = tee(all_obj, 5)
 
-        self.encoding = pref_encoding([obj.encoding for obj in g00])
-        self.system = sum(obj.system for obj in g0)
+        self.encoding = pref_encoding([obj.encoding for obj in encode_iter], redis_encoding_id_to_str)
+        self.system = sum(obj.system for obj in sys_iter)
         if total > 1:
-            self.fieldAvgCount = statistics.mean(obj.count for obj in g3)
+            self.fieldAvgCount = statistics.mean(obj.count for obj in avg_iter)
         else:
-            self.fieldAvgCount = min((obj.count for obj in g3))
+            self.fieldAvgCount = min((obj.count for obj in avg_iter))
 
-        self.valueUsedBytes = sum(obj.valueUsedBytes for obj in v1)
-        self.valueAlignedBytes = sum(obj.valueAlignedBytes for obj in v2)
+        self.valueUsedBytes = sum(obj.valueUsedBytes for obj in value_used_iter)
+        self.valueAlignedBytes = sum(obj.valueAlignedBytes for obj in value_align_iter)
 
     def __enter__(self):
         return self
@@ -56,7 +57,7 @@ class ListAggreegator:
         return False
 
 
-class List:
+class List(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:
@@ -71,7 +72,7 @@ class List:
         }
         # Undone Prefered encoding
         for pattern, data in keys.items():
-            agg = ListAggreegator((ListStatEntry(x, self.redis) for x in data), len(data))
+            agg = ListAggregator((ListStatEntry(x, self.redis) for x in data), len(data))
 
             stat_entry = [
                 pattern,
