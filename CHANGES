@@ -1,3 +1,6 @@
+* 0.1.5
+    * Fix logging issue in ValueString
+
 * 0.1.4
     * Fix pip deps
 
