@@ -2,16 +2,16 @@ import sys
 import fnmatch
 import logging
 
-from rma.redis import *
+from rma.redis import RmaRedis
 from rma.scanner import Scanner
-from rma.splitter import *
-
+from rma.splitter import SimpleSplitter
+from rma.redis_types import *
 from rma.rule import *
 from rma.reporters import *
-from rma.helpers import *
+from rma.helpers import floored_percentage
 
 from collections import defaultdict
-from redis.exceptions import ConnectionError, ResponseError
+from redis.exceptions import ResponseError
 
 
 def connect_to_redis(host, port, db=0, password=None):
