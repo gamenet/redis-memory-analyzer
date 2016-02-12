@@ -1,3 +1,7 @@
+* 0.1.3
+    * Move pattern aggregation to separate pass
+    * Retrieve key encoding in Scanner LUA script and boost performance ~1,75 times (github issue #4)
+
 * 0.1.2
     * Fix issue with `no such key ` ResponseError during debug sdslen in Value String (github issue #1)
     * Fix wrong behaviour if used non 0 db (github issue #2)
