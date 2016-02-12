@@ -17,29 +17,21 @@ class RealStringEntry:
 
         return size_of_pointer_fn()
 
-    def __init__(self, key_name, redis):
+    def __init__(self, redis, info):
         """
         :param key_name:
         :param RmaRedis redis:
         :return:
         """
-
+        key_name = info["name"]
+        self.encoding = info["encoding"]
         self.logger = logging.getLogger(__name__)
-        try:
-            self.encoding = redis.object("ENCODING", key_name).decode('utf8')
-        except AttributeError as e:
-            self.logger.warning("Invalid encoding from server for key `%s` (would be skipped)" % key_name)
-            self.encoding = REDIS_ENCODING_EMBSTR
-            self.useful_bytes = 0
-            self.free_bytes = 0
-            self.aligned = 0
-            return
 
-        if self.encoding == REDIS_ENCODING_INT:
+        if self.encoding == REDIS_ENCODING_ID_INT:
             self.useful_bytes = self.get_int_encoded_bytes(redis, key_name)
             self.free_bytes = 0
             self.aligned = size_of_aligned_string_by_size(self.useful_bytes, encoding=self.encoding)
-        elif self.encoding == REDIS_ENCODING_EMBSTR or self.encoding == REDIS_ENCODING_RAW:
+        elif self.encoding == REDIS_ENCODING_ID_EMBSTR or self.encoding == REDIS_ENCODING_ID_RAW:
             sdslen_response = redis.debug_sdslen(key_name)
             self.useful_bytes = sdslen_response['val_sds_len']
             self.free_bytes = sdslen_response['val_sds_avail']
@@ -71,9 +63,9 @@ class ValueString:
             aligned_bytes = []
             encodings = []
 
-            for key_name in data:
+            for key_info in data:
                 try:
-                    with RealStringEntry(key_name=key_name, redis=self.redis) as stat:
+                    with RealStringEntry(redis=self.redis, info=key_info) as stat:
                         used_bytes.append(stat.useful_bytes)
                         free_bytes.append(stat.free_bytes)
                         aligned_bytes.append(stat.aligned)
@@ -86,7 +78,7 @@ class ValueString:
             used_user = sum(used_bytes)
             free_user = sum(free_bytes)
             aligned = sum(aligned_bytes)
-            prefered_encoding = pref_encoding(encodings)
+            prefered_encoding = pref_encoding(encodings, redis_encoding_id_to_str)
 
             min_bytes = min(used_bytes)
             mean = statistics.mean(used_bytes) if total_elements > 1 else min_bytes
