@@ -25,7 +25,7 @@ def map_part_to_glob(index, part):
     return part
 
 
-class SimpleSplitter:
+class SimpleSplitter(object):
     def split(self, data, separator=":"):
         pass1 = map(lambda x: list(map_part_to_glob(i, y) for i, y in enumerate(x.split(separator))), data)
         pass2 = self.fold_to_tree(pass1)
@@ -78,7 +78,7 @@ class SimpleSplitter:
     def unfold_to_list(tree, separator):
         res = set()
 
-        for i, sub_tree in tree.items():
+        for sub_tree in tree.values():
             for compound_key in dict_build(sub_tree):
                 res.add(separator.join(compound_key))
         return res

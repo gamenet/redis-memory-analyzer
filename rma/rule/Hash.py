@@ -1,20 +1,21 @@
-from rma.redis import *
-from itertools import tee
-from rma.helpers import *
-
 import statistics
+from itertools import tee
+from rma.redis import *
+from rma.helpers import pref_encoding, make_total_row
 
 
-class HashStatEntry:
-    def __init__(self, key_name, redis):
+class HashStatEntry(object):
+    def __init__(self, info, redis):
         """
         :param key_name:
         :param RmaRedis redis:
         :return:
         """
+        key_name = info['name']
+
         self.keys = []
         self.values = []
-        self.encoding = redis.object('encoding', key_name).decode('utf8')
+        self.encoding = info["encoding"]
 
         for key, value in redis.hscan_iter(key_name, '*'):
             self.keys.append(key)
@@ -22,15 +23,15 @@ class HashStatEntry:
 
         self.count = len(self.keys)
 
-        args, args2, args3, args4, args5 = tee((len(x) for x in self.keys), 5)
-        m, m2, m3, m4, m5 = tee((len(x) for x in self.values), 5)
+        args, args2, args3 = tee((len(x) for x in self.keys), 3)
+        m, m2, m3 = tee((len(x) for x in self.values), 3)
 
         self.fieldUsedBytes = sum(args)
-        if self.encoding == 'hashtable':
+        if self.encoding == REDIS_ENCODING_ID_HASHTABLE:
             self.system = dict_overhead(self.count)
             self.fieldAlignedBytes = sum(map(size_of_aligned_string, self.keys))
             self.valueAlignedBytes = sum(map(size_of_aligned_string, self.values))
-        elif self.encoding == 'ziplist':
+        elif self.encoding == REDIS_ENCODING_ID_ZIPLIST:
             self.system = ziplist_overhead(self.count)
             self.fieldAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.keys))
             self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
@@ -44,13 +45,13 @@ class HashStatEntry:
         self.valueMax = max(m3)
 
 
-class HashAggreegator:
+class HashAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
-        g00, g0, g1, g2, g3, g4, v1, v2 = tee(all_obj, 8)
+        g00, g0, g1, g2, g3, v1, v2 = tee(all_obj, 7)
 
-        self.encoding = pref_encoding([obj.encoding for obj in g00])
+        self.encoding = pref_encoding([obj.encoding for obj in g00], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in g0)
         self.fieldUsedBytes = sum(obj.fieldUsedBytes for obj in g1)
         self.fieldAlignedBytes = sum(obj.fieldAlignedBytes for obj in g2)
@@ -70,7 +71,7 @@ class HashAggreegator:
         return False
 
 
-class Hash:
+class Hash(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:
@@ -86,7 +87,7 @@ class Hash:
         }
         # Undone Prefered encoding
         for pattern, data in keys.items():
-            agg = HashAggreegator((HashStatEntry(x, self.redis) for x in data), len(data))
+            agg = HashAggregator((HashStatEntry(x, self.redis) for x in data), len(data))
 
             stat_entry = [
                 pattern,

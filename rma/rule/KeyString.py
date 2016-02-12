@@ -1,10 +1,10 @@
 import statistics
+from itertools import tee
 from rma.redis import *
-from rma.helpers import *
-from itertools import *
+from rma.helpers import pref_encoding, make_total_row
 
 
-class StringEntry:
+class StringEntry(object):
     def __init__(self, value=""):
         self.encoding = get_string_encoding(value)
         self.useful_bytes = len(value)
@@ -18,7 +18,7 @@ class StringEntry:
         return False
 
 
-class KeyString:
+class KeyString(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:
@@ -33,14 +33,15 @@ class KeyString:
         }
 
         for pattern, data in keys.items():
-            used_bytes_iter, aligned_iter, encoding_iter = tee((StringEntry(value=x) for x in data), 3)
+            used_bytes_iter, aligned_iter, encoding_iter = tee(
+                    (StringEntry(value=x["name"]) for x in data), 3)
 
             total_elements = len(data)
             aligned = sum(obj.aligned for obj in aligned_iter)
             used_bytes_generator = (obj.useful_bytes for obj in used_bytes_iter)
             useful_iter, min_iter, max_iter, mean_iter = tee(used_bytes_generator, 4)
 
-            prefered_encoding = pref_encoding(obj.encoding for obj in encoding_iter)
+            prefered_encoding = pref_encoding((obj.encoding for obj in encoding_iter), redis_encoding_id_to_str)
             min_value = min(min_iter)
             if total_elements < 2:
                 avg = min_value
