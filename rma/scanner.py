@@ -17,15 +17,6 @@ class Scanner:
         :param str match: Wild card match supported in Redis SCAN command
         :return:
         """
-        self.keys = {
-            REDIS_TYPE_ID_STRING: [],
-            REDIS_TYPE_ID_HASH: [],
-            REDIS_TYPE_ID_LIST: [],
-            REDIS_TYPE_ID_SET: [],
-            REDIS_TYPE_ID_ZSET: [],
-            REDIS_TYPE_ID_UNKNOWN: [],
-        }
-
         self.redis = redis
         self.match = match
         self.accepted_types = accepted_types[:] if accepted_types else REDIS_TYPE_ID_ALL
@@ -43,7 +34,6 @@ class Scanner:
         return self
 
     def __exit__(self, *exc):
-        self.keys.clear()
         return False
 
     def batch_scan(self, count=1000, batch_size=3000):
@@ -68,7 +58,6 @@ class Scanner:
                   miniters=1000) as progress:
 
             total = 0
-
             for key_tuple in self.batch_scan():
                 key_info, key_name = key_tuple
                 key_type, key_encoding = key_info
@@ -81,9 +70,10 @@ class Scanner:
                 if to_id in self.accepted_types:
                     key_info_obj = {
                         'name': key_name.decode("utf-8"),
+                        'type': to_id,
                         'encoding': redis_encoding_str_to_id(key_encoding)
                     }
-                    self.keys[to_id].append(key_info_obj)
+                    yield key_info_obj
 
                 progress.update()
 
@@ -91,5 +81,3 @@ class Scanner:
                 if total > limit:
                     logging.info("\r\nLimit {0} reached".format(limit))
                     break
-
-        return self.keys

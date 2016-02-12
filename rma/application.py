@@ -1,7 +1,6 @@
 import sys
 import fnmatch
 import logging
-from itertools import tee
 
 from rma.redis import *
 from rma.scanner import Scanner
@@ -10,6 +9,8 @@ from rma.splitter import *
 from rma.rule import *
 from rma.reporters import *
 from rma.helpers import *
+
+from collections import defaultdict
 from redis.exceptions import ConnectionError, ResponseError
 
 
@@ -104,14 +105,20 @@ class RmaApplication:
         str_res = []
         is_all = self.behaviour == 'all'
         with Scanner(redis=self.redis, match=self.match, accepted_types=self.types) as scanner:
-            res = scanner.scan(limit=self.limit)
+            keys = defaultdict(list)
+            for v in scanner.scan(limit=self.limit):
+                keys[v["type"]].append(v)
 
+            print("Aggregating keys by pattern and type")
+            keys = {k: self.get_pattern_aggregated_data(v) for k, v in keys.items()}
+
+            print("Apply rules")
             if self.behaviour == 'global' or is_all:
                 str_res += self.do_globals()
-            # if self.behaviour == 'scanner' or is_all:
-            #     str_res += self.do_scanner(self.redis, res)
+            if self.behaviour == 'scanner' or is_all:
+                str_res += self.do_scanner(self.redis, keys)
             if self.behaviour == 'ram' or is_all:
-                str_res += self.do_ram(res)
+                str_res += self.do_ram(keys)
 
         self.reporter.print(str_res)
 
@@ -128,22 +135,20 @@ class RmaApplication:
             'data': []
         }
         total = r.dbsize()
-        for key, data in res.items():
-            r_type = type_id_to_redis_type(key)
+        for key, aggregate_patterns in res.items():
             self.logger.debug("Processing type %s" % type_id_to_redis_type(key))
-            aggregate_patterns = self.get_pattern_aggregated_data(data)
+            r_type = type_id_to_redis_type(key)
 
             for k, v in aggregate_patterns.items():
                 key_stat['data'].append([k, len(v), r_type, floored_percentage(len(v) / total, 2)])
+
         key_stat['data'].sort(key=lambda x: x[1], reverse=True)
         return ["Keys by types", key_stat]
 
     def do_ram(self, res):
         ret = []
-        for key, data in res.items():
+        for key, aggregate_patterns in res.items():
             self.logger.debug("Processing type %s" % type_id_to_redis_type(key))
-            aggregate_patterns = self.get_pattern_aggregated_data(data)
-
             if key in self.types_rules and key in self.types:
                 ret.append("Processing {0}".format(type_id_to_redis_type(key)))
                 for rule in self.types_rules[key]:
