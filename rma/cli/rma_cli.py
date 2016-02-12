@@ -22,11 +22,14 @@ class CustomHelpFormatter(HelpFormatter):
         return ', '.join(action.option_strings) + ' ' + args_string
 
 
+def parser_formatter(prog):
+    return CustomHelpFormatter(prog)
+
+
 def main():
     description = """RMA is used to scan Redis key space in and aggregate memory usage statistic by key patterns."""
 
-    parser_formater = lambda prog: CustomHelpFormatter(prog)
-    parser = ArgumentParser(prog='rma', description=description, formatter_class=parser_formater)
+    parser = ArgumentParser(prog='rma', description=description, formatter_class=parser_formatter)
     parser.add_argument("-s", "--server",
                         dest="host",
                         default="127.0.0.1",
