@@ -3,7 +3,7 @@ from rma.redis import *
 from redis.exceptions import ResponseError
 
 
-class GlobalKeySpace:
+class GlobalKeySpace(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:

@@ -4,7 +4,7 @@ from rma.helpers import *
 from itertools import *
 
 
-class StringEntry:
+class StringEntry(object):
     def __init__(self, value=""):
         self.encoding = get_string_encoding(value)
         self.useful_bytes = len(value)
@@ -18,7 +18,7 @@ class StringEntry:
         return False
 
 
-class KeyString:
+class KeyString(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:

@@ -4,7 +4,7 @@ from rma.redis import *
 from tqdm import tqdm
 
 
-class Scanner:
+class Scanner(object):
     """
     Get all keys from Redis database with given match and limits. If limit specified would be retrieved not more then
     limit keys.

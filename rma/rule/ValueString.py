@@ -4,8 +4,9 @@ from rma.helpers import *
 from redis.exceptions import RedisError
 
 
-class RealStringEntry:
-    def get_int_encoded_bytes(self, redis, key_name):
+class RealStringEntry(object):
+    @staticmethod
+    def get_int_encoded_bytes(redis, key_name):
         try:
             num_value = int(redis.get(key_name))
             if num_value < REDIS_SHARED_INTEGERS:
@@ -46,7 +47,7 @@ class RealStringEntry:
         return False
 
 
-class ValueString:
+class ValueString(object):
     def __init__(self, redis):
         self.redis = redis
         self.logger = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ from rma.helpers import *
 import statistics
 
 
-class ListStatEntry:
+class ListStatEntry(object):
     def __init__(self, info, redis):
         """
         :param key_name:
@@ -35,7 +35,7 @@ class ListStatEntry:
         self.valueMax = max(m3)
 
 
-class ListAggregator:
+class ListAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
@@ -58,7 +58,7 @@ class ListAggregator:
         return False
 
 
-class List:
+class List(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:

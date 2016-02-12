@@ -5,7 +5,7 @@ from rma.helpers import *
 import statistics
 
 
-class SetStatEntry:
+class SetStatEntry(object):
     def __init__(self, info, redis):
         """
         :param key_name:
@@ -33,7 +33,7 @@ class SetStatEntry:
             raise Exception('Panic', 'Unknown encoding %s in %s' % (self.encoding, key_name))
 
 
-class SetAggregator:
+class SetAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
@@ -57,7 +57,7 @@ class SetAggregator:
         return False
 
 
-class Set:
+class Set(object):
     def __init__(self, redis):
         """
         :param RmaRedis redis:

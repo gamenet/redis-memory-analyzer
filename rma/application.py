@@ -48,7 +48,7 @@ def check_redis_version(redis):
         return False
 
 
-class RmaApplication:
+class RmaApplication(object):
     globals = []
 
     types_rules = {

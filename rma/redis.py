@@ -1,5 +1,6 @@
 import logging
 from redis import StrictRedis
+from rma.helpers import is_num, next_power_of_2
 from rma.jemalloc import *
 from rma.redis_types import *
 
