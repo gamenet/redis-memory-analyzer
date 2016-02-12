@@ -31,8 +31,8 @@ Example : %prog -m * --type hash"""
     parser.add_option("-b", "--behaviour", dest="behaviour", default="all",
                       help="Specify application working mode")
     parser.add_option("-t", "--type", dest="types", action="append",
-                      help="""Data types to include. Possible values are string, hash, list, set. Multiple types can be provided.
-                    If not specified, all data types will be returned""")
+                      help="""Data types to include. Possible values are string, hash, list, set.
+                              Multiple types can be provided. If not specified, all data types will be returned""")
 
     (options, args) = parser.parse_args()
 
@@ -43,7 +43,8 @@ Example : %prog -m * --type hash"""
     if options.behaviour:
         if options.behaviour not in VALID_MODES:
             raise Exception(
-                'Invalid behaviour provided - %s. Expected one of %s' % (options.behaviour, (", ".join(VALID_TYPES))))
+                    'Invalid behaviour provided - %s. Expected one of %s' % (
+                    options.behaviour, (", ".join(VALID_TYPES))))
         else:
             filters['behaviour'] = options.behaviour
 
@@ -61,6 +62,7 @@ Example : %prog -m * --type hash"""
     start_time = time.clock()
     app.run()
     print("\r\nDone in %s seconds" % (time.clock() - start_time))
+
 
 if __name__ == '__main__':
     main()

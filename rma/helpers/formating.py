@@ -27,7 +27,8 @@ def pref_encoding(data, encoding_transform=None):
     sorted_encodings = sorted(encoding_counted.items(), key=lambda t: t[1], reverse=True)
 
     return ' / '.join(
-            ["{:<1} [{:<4}]".format(encoding_transform(k) if encoding_transform else k, floored_percentage(v * 1.0 / total, 1)) for k, v in sorted_encodings])
+            ["{:<1} [{:<4}]".format(encoding_transform(k) if encoding_transform else k,
+                                    floored_percentage(v * 1.0 / total, 1)) for k, v in sorted_encodings])
 
 
 def make_total_row(source, agg):
