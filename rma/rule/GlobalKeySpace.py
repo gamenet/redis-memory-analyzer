@@ -12,7 +12,7 @@ class GlobalKeySpace(object):
         self.redis = redis
         self.logger = logging.getLogger(__name__)
 
-    def analyze(self, keys=None):
+    def analyze(self):
         total_keys = self.redis.dbsize()
 
         keys_ = [

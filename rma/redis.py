@@ -1,7 +1,6 @@
-import logging
 from redis import StrictRedis
 from rma.helpers import is_num, next_power_of_2
-from rma.jemalloc import *
+from rma.jemalloc import Jemalloc
 from rma.redis_types import *
 
 
@@ -18,7 +17,6 @@ REDIS_ENCODING_EMBSTR_SIZE_LIMIT = 39
 REDIS_ENCODING_INT = 'int'
 REDIS_ENCODING_EMBSTR = 'embstr'
 REDIS_ENCODING_RAW = 'raw'
-
 
 
 def size_of_pointer_fn():
