@@ -1,3 +1,4 @@
 redis==2.10.5
 tabulate==0.7.5
 tqdm==3.7.1
+msgpack-python==0.4.7
