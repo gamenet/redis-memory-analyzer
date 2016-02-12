@@ -1,6 +1,7 @@
 import sys
 import fnmatch
 import logging
+from itertools import tee
 
 from rma.redis import *
 from rma.scanner import Scanner
@@ -107,8 +108,8 @@ class RmaApplication:
 
             if self.behaviour == 'global' or is_all:
                 str_res += self.do_globals()
-            if self.behaviour == 'scanner' or is_all:
-                str_res += self.do_scanner(self.redis, res)
+            # if self.behaviour == 'scanner' or is_all:
+            #     str_res += self.do_scanner(self.redis, res)
             if self.behaviour == 'ram' or is_all:
                 str_res += self.do_ram(res)
 
@@ -129,7 +130,8 @@ class RmaApplication:
         total = r.dbsize()
         for key, data in res.items():
             r_type = type_id_to_redis_type(key)
-            aggregate_patterns = self.get_pattern_aggregated_data(data, key)
+            self.logger.debug("Processing type %s" % type_id_to_redis_type(key))
+            aggregate_patterns = self.get_pattern_aggregated_data(data)
 
             for k, v in aggregate_patterns.items():
                 key_stat['data'].append([k, len(v), r_type, floored_percentage(len(v) / total, 2)])
@@ -139,7 +141,8 @@ class RmaApplication:
     def do_ram(self, res):
         ret = []
         for key, data in res.items():
-            aggregate_patterns = self.get_pattern_aggregated_data(data, key)
+            self.logger.debug("Processing type %s" % type_id_to_redis_type(key))
+            aggregate_patterns = self.get_pattern_aggregated_data(data)
 
             if key in self.types_rules and key in self.types:
                 ret.append("Processing {0}".format(type_id_to_redis_type(key)))
@@ -148,14 +151,12 @@ class RmaApplication:
 
         return ret
 
-    def get_pattern_aggregated_data(self, data, key):
-        split_patterns = self.splitter.split(data)
-
-        self.logger.debug("Type %s" % type_id_to_redis_type(key))
+    def get_pattern_aggregated_data(self, data):
+        split_patterns = self.splitter.split((obj["name"] for obj in data))
         self.logger.debug(split_patterns)
 
         aggregate_patterns = {item: [] for item in split_patterns}
         for pattern in split_patterns:
-            aggregate_patterns[pattern] = list(filter(lambda x: fnmatch.fnmatch(x, pattern), data))
+            aggregate_patterns[pattern] = list(filter(lambda obj: fnmatch.fnmatch(obj["name"], pattern), data))
 
         return aggregate_patterns

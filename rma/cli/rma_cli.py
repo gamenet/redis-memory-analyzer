@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import time
 import logging
 from optparse import OptionParser
 from rma.application import RmaApplication
@@ -57,8 +57,10 @@ Example : %prog -m * --type hash"""
 
     app = RmaApplication(host=options.host, port=options.port, db=options.db,
                          password=options.password, match=options.match, limit=options.limit, filters=filters)
-    app.run()
 
+    start_time = time.clock()
+    app.run()
+    print("Done in %s seconds" % (time.clock() - start_time))
 
 if __name__ == '__main__':
     main()
