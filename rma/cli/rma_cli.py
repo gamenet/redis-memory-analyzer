@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import time
 import logging
-from argparse import ArgumentParser
+from argparse import ArgumentParser, HelpFormatter
 from rma.application import RmaApplication
 
 logging.basicConfig(level=logging.INFO)
@@ -10,12 +10,23 @@ VALID_TYPES = ("string", "hash", "list", "set", "zset")
 VALID_MODES = ('all', 'scanner', 'ram', 'global')
 
 
+class CustomHelpFormatter(HelpFormatter):
+    def __init__(self, prog):
+        super().__init__(prog, max_help_position=40, width=80)
+
+    def _format_action_invocation(self, action):
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        default = self._get_default_metavar_for_optional(action)
+        args_string = self._format_args(action, default)
+        return ', '.join(action.option_strings) + ' ' + args_string
+
+
 def main():
-    usage = """usage: %prog [options]
+    description = """RMA is used to scan Redis key space in and aggregate memory usage statistic by key patterns."""
 
-Example : %prog -m * --type hash"""
-
-    parser = ArgumentParser(usage=usage)
+    parser_formater = lambda prog: CustomHelpFormatter(prog)
+    parser = ArgumentParser(prog='rma', description=description, formatter_class=parser_formater)
     parser.add_argument("-s", "--server",
                         dest="host",
                         default="127.0.0.1",
@@ -44,12 +55,13 @@ Example : %prog -m * --type hash"""
     parser.add_argument("-b", "--behaviour",
                         dest="behaviour",
                         default="all",
-                        help="Specify application working mode")
+                        help="Specify application working mode. Allowed values are" + ', '.join(VALID_MODES))
     parser.add_argument("-t", "--type",
                         dest="types",
                         action="append",
                         help="""Data types to include. Possible values are string, hash, list, set.
-                              Multiple types can be provided. If not specified, all data types will be returned""")
+                              Multiple types can be provided. If not specified, all data types will be returned.
+                              Allowed values are""" + ', '.join(VALID_TYPES))
 
     options = parser.parse_args()
 

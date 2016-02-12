@@ -35,22 +35,26 @@ After install used it from console:
 
 ```
 >rma --help
-Usage: rma-script.py [options]
+usage: rma [-h] [-s HOST] [-p PORT] [-a PASSWORD] [-d DB] [-m MATCH] [-l LIMIT]
+           [-b BEHAVIOUR] [-t TYPES]
 
-Example : rma-script.py -m * --type hash
+RMA is used to scan Redis key space in and aggregate memory usage statistic by
+key patterns.
 
-Options:
-  -h, --help                            Show this help message and exit
-  -s HOST, --server=HOST                Redis Server hostname. Defaults to 127.0.0.1
-  -p PORT, --port=PORT                  Redis Server port. Defaults to 6379
-  -a PASSWORD, --password=PASSWORD      Password to use when connecting to the server
-  -d DB, --db=DB                        Database number, defaults to 0
-  -m MATCH, --match=MATCH               Keys pattern to match
-  -l LIMIT, --limit=LIMIT               Get max key matched by pattern
-  -b BEHAVIOUR, --behaviour=BEHAVIOUR   Specify application working mode
-  -t TYPES, --type=TYPES                Data types to include. Possible values are string,
-                                        hash, list, set. Multiple types can be provided.
-                                        If not specified, all data types will be returned
+optional arguments:
+  -h, --help                 show this help message and exit
+  -s, --server HOST          Redis Server hostname. Defaults to 127.0.0.1
+  -p, --port PORT            Redis Server port. Defaults to 6379
+  -a, --password PASSWORD    Password to use when connecting to the server
+  -d, --db DB                Database number, defaults to 0
+  -m, --match MATCH          Keys pattern to match
+  -l, --limit LIMIT          Get max key matched by pattern
+  -b, --behaviour BEHAVIOUR  Specify application working mode. Allowed values
+                             areall, scanner, ram, global
+  -t, --type TYPES           Data types to include. Possible values are string,
+                             hash, list, set. Multiple types can be provided. If
+                             not specified, all data types will be returned.
+                             Allowed values arestring, hash, list, set, zset
 ```
 
 If you have large database try running first with `--limit` option to run first limited amount of keys. Also run with `--types`
