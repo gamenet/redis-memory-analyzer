@@ -6,22 +6,24 @@ import statistics
 
 
 class ListStatEntry:
-    def __init__(self, key_name, redis):
+    def __init__(self, info, redis):
         """
         :param key_name:
         :param RmaRedis redis:
         :return:
         """
+        key_name = info["name"]
+        self.encoding = info['encoding']
+
         self.values = redis.lrange(key_name, 0, -1)
-        self.encoding = redis.object('encoding', key_name).decode('utf8')
         self.count = len(self.values)
 
         m, m2, m3 = tee((len(x) for x in self.values), 3)
 
-        if self.encoding == 'linkedlist':
+        if self.encoding == REDIS_ENCODING_ID_LINKEDLIST:
             self.system = dict_overhead(self.count)
             self.valueAlignedBytes = sum(map(size_of_linkedlist_aligned_string, self.values))
-        elif self.encoding == 'ziplist' or self.encoding == 'quicklist':
+        elif self.encoding == REDIS_ENCODING_ID_ZIPLIST or self.encoding == REDIS_ENCODING_ID_QUICKLIST:
             # Undone `quicklist`
             self.system = ziplist_overhead(self.count)
             self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
@@ -33,13 +35,13 @@ class ListStatEntry:
         self.valueMax = max(m3)
 
 
-class ListAggreegator:
+class ListAggregator:
     def __init__(self, all_obj, total):
         self.total_elements = total
 
         g00, g0, g1, g2, g3, g4, v1, v2 = tee(all_obj, 8)
 
-        self.encoding = pref_encoding([obj.encoding for obj in g00])
+        self.encoding = pref_encoding([obj.encoding for obj in g00], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in g0)
         if total > 1:
             self.fieldAvgCount = statistics.mean(obj.count for obj in g3)
@@ -71,7 +73,7 @@ class List:
         }
         # Undone Prefered encoding
         for pattern, data in keys.items():
-            agg = ListAggreegator((ListStatEntry(x, self.redis) for x in data), len(data))
+            agg = ListAggregator((ListStatEntry(x, self.redis) for x in data), len(data))
 
             stat_entry = [
                 pattern,

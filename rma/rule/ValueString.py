@@ -78,7 +78,7 @@ class ValueString:
             used_user = sum(used_bytes)
             free_user = sum(free_bytes)
             aligned = sum(aligned_bytes)
-            prefered_encoding = pref_encoding(encodings, redis_encoding_id_to_str)
+            preferred_encoding = pref_encoding(encodings, redis_encoding_id_to_str)
 
             min_bytes = min(used_bytes)
             mean = statistics.mean(used_bytes) if total_elements > 1 else min_bytes
@@ -90,7 +90,7 @@ class ValueString:
                 free_user,
                 aligned,
                 aligned / (used_user if used_user > 0 else 1),
-                prefered_encoding,
+                preferred_encoding,
                 min_bytes,
                 max(used_bytes),
                 mean,

@@ -6,15 +6,17 @@ import statistics
 
 
 class HashStatEntry:
-    def __init__(self, key_name, redis):
+    def __init__(self, info, redis):
         """
         :param key_name:
         :param RmaRedis redis:
         :return:
         """
+        key_name = info['name']
+
         self.keys = []
         self.values = []
-        self.encoding = redis.object('encoding', key_name).decode('utf8')
+        self.encoding = info["encoding"]
 
         for key, value in redis.hscan_iter(key_name, '*'):
             self.keys.append(key)
@@ -26,11 +28,11 @@ class HashStatEntry:
         m, m2, m3, m4, m5 = tee((len(x) for x in self.values), 5)
 
         self.fieldUsedBytes = sum(args)
-        if self.encoding == 'hashtable':
+        if self.encoding == REDIS_ENCODING_ID_HASHTABLE:
             self.system = dict_overhead(self.count)
             self.fieldAlignedBytes = sum(map(size_of_aligned_string, self.keys))
             self.valueAlignedBytes = sum(map(size_of_aligned_string, self.values))
-        elif self.encoding == 'ziplist':
+        elif self.encoding == REDIS_ENCODING_ID_ZIPLIST:
             self.system = ziplist_overhead(self.count)
             self.fieldAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.keys))
             self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
@@ -44,13 +46,13 @@ class HashStatEntry:
         self.valueMax = max(m3)
 
 
-class HashAggreegator:
+class HashAggregator:
     def __init__(self, all_obj, total):
         self.total_elements = total
 
         g00, g0, g1, g2, g3, g4, v1, v2 = tee(all_obj, 8)
 
-        self.encoding = pref_encoding([obj.encoding for obj in g00])
+        self.encoding = pref_encoding([obj.encoding for obj in g00], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in g0)
         self.fieldUsedBytes = sum(obj.fieldUsedBytes for obj in g1)
         self.fieldAlignedBytes = sum(obj.fieldAlignedBytes for obj in g2)
@@ -86,7 +88,7 @@ class Hash:
         }
         # Undone Prefered encoding
         for pattern, data in keys.items():
-            agg = HashAggreegator((HashStatEntry(x, self.redis) for x in data), len(data))
+            agg = HashAggregator((HashStatEntry(x, self.redis) for x in data), len(data))
 
             stat_entry = [
                 pattern,
