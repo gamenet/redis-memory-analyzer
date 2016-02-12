@@ -1,6 +1,7 @@
 import logging
 from redis import StrictRedis
 from rma.jemalloc import *
+from rma.redis_types import *
 
 
 size_of_pointer = 8
@@ -17,56 +18,6 @@ REDIS_ENCODING_INT = 'int'
 REDIS_ENCODING_EMBSTR = 'embstr'
 REDIS_ENCODING_RAW = 'raw'
 
-# Internal type mapping
-REDIS_TYPE_ID_UNKNOWN = -1
-REDIS_TYPE_ID_STRING = 0
-REDIS_TYPE_ID_HASH = 1
-REDIS_TYPE_ID_LIST = 2
-REDIS_TYPE_ID_SET = 3
-REDIS_TYPE_ID_ZSET = 4
-REDIS_TYPE_ID_ALL = [
-    REDIS_TYPE_ID_STRING, REDIS_TYPE_ID_HASH, REDIS_TYPE_ID_LIST, REDIS_TYPE_ID_SET, REDIS_TYPE_ID_ZSET
-]
-
-
-def redis_type_to_id(key_type):
-    """
-    Convert redis type string to internal num type
-    :param str key_type:
-    :return int:
-    """
-    if key_type == b'string' or key_type == 'string':
-        return REDIS_TYPE_ID_STRING
-    elif key_type == b'hash' or key_type == 'hash':
-        return REDIS_TYPE_ID_HASH
-    elif key_type == b'list' or key_type == 'list':
-        return REDIS_TYPE_ID_LIST
-    elif key_type == b'set' or key_type == 'set':
-        return REDIS_TYPE_ID_SET
-    elif key_type == b'zset' or key_type == 'zset':
-        return REDIS_TYPE_ID_ZSET
-    else:
-        return REDIS_TYPE_ID_UNKNOWN
-
-
-def type_id_to_redis_type(type_id):
-    """
-    Convert internal type id to Redis string type
-    :param int type_id:
-    :return str:
-    """
-    if type_id == REDIS_TYPE_ID_STRING:
-        return 'string'
-    elif type_id == REDIS_TYPE_ID_HASH:
-        return 'hash'
-    elif type_id == REDIS_TYPE_ID_LIST:
-        return 'list'
-    elif type_id == REDIS_TYPE_ID_SET:
-        return 'set'
-    elif type_id == REDIS_TYPE_ID_ZSET:
-        return 'zset'
-    else:
-        return 'unknown'
 
 
 def size_of_pointer_fn():
@@ -96,15 +47,15 @@ def get_redis_object_overhead():
 
 def get_string_encoding(value):
     if is_num(value):
-        return REDIS_ENCODING_INT
+        return REDIS_ENCODING_ID_INT
     elif len(value) < REDIS_ENCODING_EMBSTR_SIZE_LIMIT:
-        return REDIS_ENCODING_EMBSTR
+        return REDIS_ENCODING_ID_EMBSTR
     else:
-        return REDIS_ENCODING_RAW
+        return REDIS_ENCODING_ID_RAW
 
 
-def size_of_sds_string(value, encoding=REDIS_ENCODING_INT):
-    if encoding == REDIS_ENCODING_INT:
+def size_of_sds_string(value, encoding=REDIS_ENCODING_ID_INT):
+    if encoding == REDIS_ENCODING_ID_INT:
         try:
             num_value = int(value)
             if num_value < REDIS_SHARED_INTEGERS:
@@ -127,11 +78,12 @@ def size_of_aligned_string(value, encoding=""):
 
 def size_of_aligned_string_by_size(sdslen, encoding):
     r_obj = get_redis_object_overhead()
-    if encoding == REDIS_ENCODING_INT:
+    if encoding == REDIS_ENCODING_ID_INT:
         return allocator.align(r_obj)
-    elif encoding == REDIS_ENCODING_EMBSTR:
+    elif encoding == REDIS_ENCODING_ID_EMBSTR:
         return allocator.align(sdslen + r_obj)
     else:
+        # REDIS_ENCODING_ID_RAW
         return allocator.align(sdslen) + allocator.align(r_obj)
 
 
