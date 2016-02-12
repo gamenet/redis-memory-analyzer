@@ -1,5 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/rma.svg)](https://badge.fury.io/py/rma)
 [![Build Status](https://travis-ci.org/gamenet/redis-memory-analyzer.svg?branch=master)](https://travis-ci.org/gamenet/redis-memory-analyzer)
+[![Code Health](https://landscape.io/github/gamenet/redis-memory-analyzer/master/landscape.svg?style=flat-square)](https://landscape.io/github/gamenet/redis-memory-analyzer/master)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/gamenet/redis-memory-analyzer/master/LICENSE)
 
 Redis Memory Analyzer
