@@ -134,7 +134,7 @@ class RmaApplication(object):
             'headers': ['Match', "Count", "Type", "%"],
             'data': []
         }
-        total = r.dbsize()
+        total = min(r.dbsize(), self.limit)
         for key, aggregate_patterns in res.items():
             self.logger.debug("Processing type %s" % type_id_to_redis_type(key))
             r_type = type_id_to_redis_type(key)

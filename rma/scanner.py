@@ -63,7 +63,7 @@ class Scanner(object):
                 key_type, key_encoding = key_info
                 if not key_name:
                     self.logger.warning(
-                        '\r\nWarning! Scan iterator return key with empty name `` and type %s' % key_type)
+                        '\r\nWarning! Scan iterator return key with empty name `` and type %s', key_type)
                     continue
 
                 to_id = redis_type_to_id(key_type)
@@ -79,5 +79,5 @@ class Scanner(object):
 
                 total += 1
                 if total > limit:
-                    logging.info("\r\nLimit {0} reached".format(limit))
+                    logging.info("\r\nLimit %s reached", limit)
                     break

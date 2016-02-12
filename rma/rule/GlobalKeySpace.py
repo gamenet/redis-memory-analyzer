@@ -22,7 +22,7 @@ class GlobalKeySpace(object):
         try:
             keys_ += [["Used `{0}`".format(key), value] for key, value in self.redis.config_get("*max-*-*").items()]
         except ResponseError as e:
-            self.logger.warning("*max* option skipped: {0}".format(repr(e)))
+            self.logger.warning("*max* option skipped: %s", repr(e))
 
         keys_ += [["Info `{0}`".format(key), value] for key, value in self.redis.info('memory').items()]
 
