@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-
+import uuid
 from rma import __version__
+from pip.req import parse_requirements
 
 long_description = '''
 RMA is a console tool to scan Redis key space in real time and aggregate memory usage statistic by key patterns. You may
@@ -45,4 +46,7 @@ try:
 except ImportError:
     from distutils.core import setup
 
-setup(**sdict, requires=['tqdm', 'tabulate', 'redis', 'msgpack-python'])
+install_reqs = parse_requirements('requirements.txt', session=uuid.uuid1())
+reqs = [str(req.req) for req in install_reqs]
+
+setup(**sdict, install_requires=reqs)
