@@ -60,7 +60,7 @@ Example : %prog -m * --type hash"""
 
     start_time = time.clock()
     app.run()
-    print("Done in %s seconds" % (time.clock() - start_time))
+    print("\r\nDone in %s seconds" % (time.clock() - start_time))
 
 if __name__ == '__main__':
     main()

@@ -1,6 +1,6 @@
 import statistics
 from rma.redis import *
-from rma.helpers import *
+from rma.helpers import pref_encoding, make_total_row
 from redis.exceptions import RedisError
 
 

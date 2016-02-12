@@ -1,8 +1,7 @@
-from rma.redis import *
-from itertools import tee
-from rma.helpers import *
-
 import statistics
+from itertools import tee
+from rma.redis import *
+from rma.helpers import pref_encoding, make_total_row
 
 
 class HashStatEntry(object):
@@ -24,8 +23,8 @@ class HashStatEntry(object):
 
         self.count = len(self.keys)
 
-        args, args2, args3, args4, args5 = tee((len(x) for x in self.keys), 5)
-        m, m2, m3, m4, m5 = tee((len(x) for x in self.values), 5)
+        args, args2, args3 = tee((len(x) for x in self.keys), 3)
+        m, m2, m3 = tee((len(x) for x in self.values), 3)
 
         self.fieldUsedBytes = sum(args)
         if self.encoding == REDIS_ENCODING_ID_HASHTABLE:
@@ -50,7 +49,7 @@ class HashAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
-        g00, g0, g1, g2, g3, g4, v1, v2 = tee(all_obj, 8)
+        g00, g0, g1, g2, g3, v1, v2 = tee(all_obj, 7)
 
         self.encoding = pref_encoding([obj.encoding for obj in g00], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in g0)

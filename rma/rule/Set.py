@@ -1,6 +1,6 @@
-from rma.redis import *
 from itertools import tee
-from rma.helpers import *
+from rma.redis import *
+from rma.helpers import pref_encoding, make_total_row
 
 import statistics
 

@@ -78,7 +78,7 @@ class SimpleSplitter(object):
     def unfold_to_list(tree, separator):
         res = set()
 
-        for i, sub_tree in tree.items():
+        for sub_tree in tree.values():
             for compound_key in dict_build(sub_tree):
                 res.add(separator.join(compound_key))
         return res
