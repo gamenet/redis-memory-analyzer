@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from rma import __version__
 
 long_description = '''
 RMA is a console tool to scan Redis key space in real time and aggregate memory usage statistic by key patterns. You may
@@ -24,7 +23,7 @@ except ImportError:
     from distutils.core import setup
 
 setup(name='rma',
-      version=__version__,
+      version='0.1.8',
       description='Utilities to profile Redis RAM usage',
       long_description=long_description,
       url='https://github.com/gamenet/redis-memory-analyzer',
