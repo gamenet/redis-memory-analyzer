@@ -30,8 +30,13 @@ class ListStatEntry(object):
             raise Exception('Panic', 'Unknown encoding %s in %s' % (self.encoding, key_name))
 
         self.valueUsedBytes = sum(used_bytes_iter)
-        self.valueMin = min(min_iter)
-        self.valueMax = max(max_iter)
+
+        if self.count > 0:
+            self.valueMin = min(min_iter)
+            self.valueMax = max(max_iter)
+        else:
+            self.valueMin = 0
+            self.valueMax = 0
 
 
 class ListAggregator(object):

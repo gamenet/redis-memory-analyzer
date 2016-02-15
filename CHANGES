@@ -1,6 +1,7 @@
 * 0.1.9
     * Fix issue with types and behavior filters (#14)
     * Add columns min and max to the list statistic (#15)
+    * ValueError: min() arg is an empty sequence (#13)
 
 * 0.1.8
     * More one try with deps in setup.py. Tnx a lot to  (#16)
