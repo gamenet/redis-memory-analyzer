@@ -1,21 +1,16 @@
 #!/usr/bin/env python
+import os
+from os.path import join
 
-long_description = '''
-RMA is a console tool to scan Redis key space in real time and aggregate memory usage statistic by key patterns. You may
-use this tools without maintenance on production servers. You can scanning by all or selected Redis types such as "string",
-"hash", "list", "set", "zset" and use matching pattern as you like. RMA try to discern key names by patterns, for example
-if you have keys like 'user:100' and 'user:101' application would pick out common pattern 'user:*' in output so you can
-analyze most memory distressed data in your instance.
-'''
+base_dir = os.path.dirname(__file__)
+readme_path = join(base_dir, 'README.rst')
+changes = join(base_dir, 'CHANGES')
 
-classifiers = [
-    'Development Status :: 3 - Alpha',
-    'Environment :: Console',
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: MIT License',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python'
-]
+long_description = open(readme_path).read() + '\n' + open(changes).read()
+
+__pkginfo__ = {}
+with open(os.path.join(base_dir, "rma", "__pkginfo__.py")) as f:
+    exec(f.read(), __pkginfo__)
 
 try:
     from setuptools import setup
@@ -23,7 +18,7 @@ except ImportError:
     from distutils.core import setup
 
 setup(name='rma',
-      version='0.1.9',
+      version=__pkginfo__['version'],
       description='Utilities to profile Redis RAM usage',
       long_description=long_description,
       url='https://github.com/gamenet/redis-memory-analyzer',
@@ -34,12 +29,15 @@ setup(name='rma',
       keywords=['Redis', 'Memory Profiler'],
       license='MIT',
       install_requires=['redis', 'tabulate', 'tqdm', 'msgpack-python'],
+      include_package_data=True,
       packages=['rma', 'rma.helpers', 'rma.reporters', 'rma.rule', 'rma.cli'],
-      package_data={'rma.cli': ['*.template']},
+      package_data={
+          'rma.cli': ['*.template']
+      },
       test_suite='tests.all_tests',
       entry_points={
           'console_scripts': [
               'rma = rma.cli.rma_cli:main',
           ],
       },
-      classifiers=classifiers)
+      classifiers=__pkginfo__['classifiers'],)
