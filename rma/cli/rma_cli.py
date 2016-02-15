@@ -58,20 +58,17 @@ def main():
     parser.add_argument("-b", "--behaviour",
                         dest="behaviour",
                         default="all",
-                        help="Specify application working mode. Allowed values are" + ', '.join(VALID_MODES))
+                        help="Specify application working mode. Allowed values are " + ', '.join(VALID_MODES))
     parser.add_argument("-t", "--type",
                         dest="types",
                         action="append",
                         help="""Data types to include. Possible values are string, hash, list, set.
                               Multiple types can be provided. If not specified, all data types will be returned.
-                              Allowed values are""" + ', '.join(VALID_TYPES))
+                              Allowed values are """ + ', '.join(VALID_TYPES))
 
     options = parser.parse_args()
 
     filters = {}
-    if options.match:
-        filters['match'] = options.match
-
     if options.behaviour:
         if options.behaviour not in VALID_MODES:
             raise Exception(

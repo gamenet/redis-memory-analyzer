@@ -69,17 +69,14 @@ class RmaApplication(object):
         self.match = match
         self.limit = limit if limit != 0 else sys.maxsize
 
-        if 'filters' in filters:
-            if 'types' in filters['filters']:
-                self.types = list(map(redis_type_to_id, filters['filters']['types']))
-            else:
-                self.types = REDIS_TYPE_ID_ALL
-            if 'behaviour' in filters['filters']:
-                self.behaviour = filters['filters']['behaviour']
-            else:
-                self.behaviour = 'all'
+        if 'types' in filters:
+            self.types = list(map(redis_type_to_id, filters['types']))
         else:
             self.types = REDIS_TYPE_ID_ALL
+
+        if 'behaviour' in filters:
+            self.behaviour = filters['behaviour']
+        else:
             self.behaviour = 'all'
 
     def init_globals(self, redis):

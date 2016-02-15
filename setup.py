@@ -23,7 +23,7 @@ except ImportError:
     from distutils.core import setup
 
 setup(name='rma',
-      version='0.1.8',
+      version='0.1.9',
       description='Utilities to profile Redis RAM usage',
       long_description=long_description,
       url='https://github.com/gamenet/redis-memory-analyzer',
