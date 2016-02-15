@@ -195,10 +195,10 @@ The memory reported by this tool is approximate. In general, the
 reported memory should be within 10% of what is reported by
 `info <http://redis.io/commands/info>`__.
 
-Also note that the tool does not (and cannot) account for the following
-- \* Memory used by allocator metadata (it is actually not possible
-without ``c``) \* Memory used for pub/sub (no any commands in Redis for
-that) \* Redis process internals (like shared objects)
+Also note that the tool does not (and cannot) account for the following:
+- Memory used by allocator metadata (it is actually not possible without ``c``)
+- Memory used for pub/sub (no any commands in Redis for that)
+- Redis process internals (like shared objects)
 
 Known issues
 ~~~~~~~~~~~~
