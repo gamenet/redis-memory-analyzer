@@ -21,6 +21,7 @@ sdict = {
     'maintainer_email': 'misterionkell@gmail.com',
     'keywords': ['Redis', 'Memory Profiler'],
     'license': 'MIT',
+    'install_requires': ['redis', 'tabulate', 'tqdm', 'msgpack-python'],
     'packages': ['rma', 'rma.helpers', 'rma.reporters', 'rma.rule', 'rma.cli'],
     'package_data': {'rma.cli': ['*.template']},
     'test_suite': 'tests.all_tests',
@@ -44,4 +45,4 @@ try:
 except ImportError:
     from distutils.core import setup
 
-setup(**sdict, install_requires=['redis', 'tabulate', 'tqdm', 'msgpack-python'])
+setup(**sdict)
