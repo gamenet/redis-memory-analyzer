@@ -1,7 +1,12 @@
 import logging
 import msgpack
-from rma.redis import *
+from redis.exceptions import ResponseError
 from tqdm import tqdm
+from rma.redis import *
+
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 class Scanner(object):
@@ -20,6 +25,7 @@ class Scanner(object):
         self.redis = redis
         self.match = match
         self.accepted_types = accepted_types[:] if accepted_types else REDIS_TYPE_ID_ALL
+        self.pipeline_mode = False
         self.resolve_types_script = self.redis.register_script("""
             local ret = {}
             for i = 1, #KEYS do
@@ -47,11 +53,29 @@ class Scanner(object):
             yield from self.resolve_types(ret)
 
     def resolve_types(self, ret):
-        key_with_types = msgpack.unpackb(self.resolve_types_script(ret))
+        if not self.pipeline_mode:
+            try:
+                key_with_types = msgpack.unpackb(self.resolve_types_script(ret))
+            except ResponseError as e:
+                if "CROSSSLOT" not in repr(e):
+                    raise e
+                key_with_types = self.resolve_with_pipe(ret)
+                self.pipeline_mode = True
+        else:
+            key_with_types = self.resolve_with_pipe(ret)
+
         for i in range(0, len(ret)):
             yield key_with_types[i], ret[i]
 
         ret.clear()
+
+    def resolve_with_pipe(self, ret):
+        pipe = self.redis.pipeline(transaction=False)
+        for key in ret:
+            pipe.type(key)
+            pipe.object('ENCODING', key)
+        key_with_types = [{'type': x, 'encoding': y} for x, y in chunker(pipe.execute(), 2)]
+        return key_with_types
 
     def scan(self, limit=1000):
         with tqdm(total=min(limit, self.redis.dbsize()), desc="Match {0}".format(self.match),
