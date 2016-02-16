@@ -1,7 +1,8 @@
 import statistics
+from tqdm import tqdm
 from itertools import tee
 from rma.redis import *
-from rma.helpers import pref_encoding, make_total_row
+from rma.helpers import pref_encoding, make_total_row, progress_iterator
 
 
 class StringEntry(object):
@@ -26,15 +27,26 @@ class KeyString(object):
         """
         self.redis = redis
 
-    def analyze(self, keys):
+    def analyze(self, keys, total=0):
+        """
+
+        :param keys:
+        :param progress:
+        :return:
+        """
         key_stat = {
             'headers': ['Match', "Count", "Useful", "Real", "Ratio", "Encoding", "Min", "Max", "Avg"],
             'data': []
         }
 
+        progress = tqdm(total=total,
+                        mininterval=1,
+                        desc="Processing keys",
+                        leave=False)
+
         for pattern, data in keys.items():
             used_bytes_iter, aligned_iter, encoding_iter = tee(
-                    (StringEntry(value=x["name"]) for x in data), 3)
+                    progress_iterator((StringEntry(value=x["name"]) for x in data), progress), 3)
 
             total_elements = len(data)
             aligned = sum(obj.aligned for obj in aligned_iter)
@@ -58,6 +70,8 @@ class KeyString(object):
 
         key_stat['data'].sort(key=lambda x: x[1], reverse=True)
         key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, sum, 0, '', 0, 0, 0]))
+
+        progress.close()
 
         return [
             "key stats",

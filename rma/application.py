@@ -106,10 +106,10 @@ class RmaApplication(object):
             for v in scanner.scan(limit=self.limit):
                 keys[v["type"]].append(v)
 
-            print("Aggregating keys by pattern and type")
+            print("\r\nAggregating keys by pattern and type")
             keys = {k: self.get_pattern_aggregated_data(v) for k, v in keys.items()}
 
-            print("Apply rules")
+            print("\r\nApply rules")
             if self.behaviour == 'global' or is_all:
                 str_res += self.do_globals()
             if self.behaviour == 'scanner' or is_all:
@@ -149,7 +149,8 @@ class RmaApplication(object):
             if key in self.types_rules and key in self.types:
                 ret.append("Processing {0}".format(type_id_to_redis_type(key)))
                 for rule in self.types_rules[key]:
-                    ret += (rule.analyze(aggregate_patterns))
+                    total_keys = sum(len(values) for key, values in aggregate_patterns.items())
+                    ret += (rule.analyze(keys=aggregate_patterns, total=total_keys))
 
         return ret
 

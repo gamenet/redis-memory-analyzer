@@ -1,7 +1,8 @@
 import statistics
 import logging
+from tqdm import tqdm
 from rma.redis import *
-from rma.helpers import pref_encoding, make_total_row
+from rma.helpers import pref_encoding, make_total_row, progress_iterator
 from redis.exceptions import RedisError
 
 
@@ -53,11 +54,16 @@ class ValueString(object):
         self.redis = redis
         self.logger = logging.getLogger(__name__)
 
-    def analyze(self, keys):
+    def analyze(self, keys, total=0):
         key_stat = {
             'headers': ['Match', "Count", "Useful", "Free", "Real", "Ratio", "Encoding", "Min", "Max", "Avg"],
             'data': []
         }
+
+        progress = tqdm(total=total,
+                        mininterval=1,
+                        desc="Processing String patterns",
+                        leave=False)
 
         for pattern, data in keys.items():
             used_bytes = []
@@ -65,7 +71,7 @@ class ValueString(object):
             aligned_bytes = []
             encodings = []
 
-            for key_info in data:
+            for key_info in progress_iterator(data, progress):
                 try:
                     with RealStringEntry(redis=self.redis, info=key_info) as stat:
                         used_bytes.append(stat.useful_bytes)
@@ -101,6 +107,8 @@ class ValueString(object):
 
         key_stat['data'].sort(key=lambda e: e[1], reverse=True)
         key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, 0, sum, 0, '', 0, 0, 0]))
+
+        progress.close()
 
         return [
             "String value stat",
