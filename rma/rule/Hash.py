@@ -1,7 +1,8 @@
 import statistics
 from itertools import tee
+from tqdm import tqdm
 from rma.redis import *
-from rma.helpers import pref_encoding, make_total_row
+from rma.helpers import pref_encoding, make_total_row, progress_iterator
 
 
 class HashStatEntry(object):
@@ -79,15 +80,20 @@ class Hash(object):
         """
         self.redis = redis
 
-    def analyze(self, keys):
+    def analyze(self, keys, total=0):
         key_stat = {
             'headers': ['Match', "Count", "Avg field count", "Key mem", "Real", "Ratio", "Value mem", "Real", "Ratio",
                         "System", "Encoding", "Total mem", "Total aligned"],
             'data': []
         }
-        # Undone Prefered encoding
+
+        progress = tqdm(total=total,
+                        mininterval=1,
+                        desc="Processing Hash patterns",
+                        leave=False)
+
         for pattern, data in keys.items():
-            agg = HashAggregator((HashStatEntry(x, self.redis) for x in data), len(data))
+            agg = HashAggregator(progress_iterator((HashStatEntry(x, self.redis) for x in data), progress), len(data))
 
             stat_entry = [
                 pattern,
@@ -110,6 +116,8 @@ class Hash(object):
         key_stat['data'].sort(key=lambda x: x[12], reverse=True)
         key_stat['data'].append(
             make_total_row(key_stat['data'], ['Total:', sum, 0, sum, sum, 0, sum, sum, 0, sum, '', sum, sum]))
+
+        progress.close()
 
         return [
             "Hash stat",

@@ -1,6 +1,15 @@
 ChangeLog for RMA
 --------------------
 
+- 0.1.10
+
+   * Each rule submit they progress with tqdm.
+     Closes issue #5.
+
+   * Fix CROSSSLOT error in Scanner Lua script by switching to pipelined mode to retrieve type
+     and encoding data from Redis cluster server.
+     Part of fixing issue #17.
+
 - 0.1.9
 
    * Fix issue with types and behavior filters.

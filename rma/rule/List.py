@@ -1,7 +1,8 @@
 import statistics
 from itertools import tee
+from tqdm import tqdm
 from rma.redis import *
-from rma.helpers import pref_encoding, make_total_row
+from rma.helpers import pref_encoding, make_total_row, progress_iterator
 
 
 class ListStatEntry(object):
@@ -16,7 +17,8 @@ class ListStatEntry(object):
 
         self.values = redis.lrange(key_name, 0, -1)
         self.count = len(self.values)
-
+        import time
+        time.sleep(0.001)
         used_bytes_iter, min_iter, max_iter = tee((len(x) for x in self.values), 3)
 
         if self.encoding == REDIS_ENCODING_ID_LINKEDLIST:
@@ -77,14 +79,19 @@ class List(object):
         """
         self.redis = redis
 
-    def analyze(self, keys):
+    def analyze(self, keys, total=0):
         key_stat = {
             'headers': ['Match', "Count", "Avg Count", "Min Count", "Max Count", "Stdev Count", "Value mem", "Real", "Ratio", "System", "Encoding", "Total"],
             'data': []
         }
-        # Undone Prefered encoding
+
+        progress = tqdm(total=total,
+                        mininterval=1,
+                        desc="Processing List patterns",
+                        leave=False)
+
         for pattern, data in keys.items():
-            agg = ListAggregator((ListStatEntry(x, self.redis) for x in data), len(data))
+            agg = ListAggregator(progress_iterator((ListStatEntry(x, self.redis) for x in data), progress), len(data))
 
             stat_entry = [
                 pattern,
@@ -102,10 +109,12 @@ class List(object):
             ]
 
             key_stat['data'].append(stat_entry)
+            progress.update()
 
         key_stat['data'].sort(key=lambda x: x[8], reverse=True)
         key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, 0, 0, 0, sum, sum, 0, sum, '', sum]))
 
+        progress.close()
         return [
             "List stat",
             key_stat
