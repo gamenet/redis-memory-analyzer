@@ -1,5 +1,9 @@
 ChangeLog for RMA
 --------------------
+- 0.1.11
+
+   * Fix unknown command 'DEBUG' issue with AWS's ElastiCache.
+     Closes issue #21.
 
 - 0.1.10
 
