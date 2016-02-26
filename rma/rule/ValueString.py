@@ -20,7 +20,7 @@ class RealStringEntry(object):
 
         return size_of_pointer_fn()
 
-    def __init__(self, redis, info):
+    def __init__(self, redis, info, use_debug=True):
         """
         :param key_name:
         :param RmaRedis redis:
@@ -35,9 +35,13 @@ class RealStringEntry(object):
             self.free_bytes = 0
             self.aligned = size_of_aligned_string_by_size(self.useful_bytes, encoding=self.encoding)
         elif self.encoding == REDIS_ENCODING_ID_EMBSTR or self.encoding == REDIS_ENCODING_ID_RAW:
-            sdslen_response = redis.debug_sdslen(key_name)
-            self.useful_bytes = sdslen_response['val_sds_len']
-            self.free_bytes = sdslen_response['val_sds_avail']
+            if use_debug:
+                sdslen_response = redis.debug_sdslen(key_name)
+                self.useful_bytes = sdslen_response['val_sds_len']
+                self.free_bytes = sdslen_response['val_sds_avail']
+            else:
+                self.useful_bytes = size_of_aligned_string_by_size(redis.strlen(key_name), self.encoding)
+                self.free_bytes = 0
             # INFO Rewrite this to support Redis >= 3.2 sds dynamic header
             sds_len = 8 + self.useful_bytes + self.free_bytes + 1
             self.aligned = size_of_aligned_string_by_size(sds_len, encoding=self.encoding)
@@ -65,6 +69,7 @@ class ValueString(object):
                         desc="Processing String patterns",
                         leave=False)
 
+        use_debug_command = True
         for pattern, data in keys.items():
             used_bytes = []
             free_bytes = []
@@ -73,14 +78,17 @@ class ValueString(object):
 
             for key_info in progress_iterator(data, progress):
                 try:
-                    with RealStringEntry(redis=self.redis, info=key_info) as stat:
+                    with RealStringEntry(redis=self.redis, info=key_info, use_debug=use_debug_command) as stat:
                         used_bytes.append(stat.useful_bytes)
                         free_bytes.append(stat.free_bytes)
                         aligned_bytes.append(stat.aligned)
                         encodings.append(stat.encoding)
                 except RedisError as e:
                     # This code works in real time so key me be deleted and this code fail
-                    self.logger.warning(repr(e))
+                    error_string = repr(e)
+                    self.logger.warning(error_string)
+                    if 'DEBUG' in error_string:
+                        use_debug_command = False
 
             total_elements = len(used_bytes)
             used_user = sum(used_bytes)
