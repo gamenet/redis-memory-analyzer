@@ -105,6 +105,9 @@ understand other data from this tools:
 The one of interesting things here is "RedisDB key space overhead". The
 amount of memory used Redis to store key space data. If you have lots of
 keys in your Redis instance this actually shows your overhead for this.
+Keep in mind that part of data such as total keys in db or key space overhead
+shows data for selected db. But statistics started with ``Info`` or ``Config``
+keywords is server based.
 
 Key types ('scanner' behaviour)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -3,7 +3,7 @@ import logging
 from tqdm import tqdm
 from rma.redis import *
 from rma.helpers import pref_encoding, make_total_row, progress_iterator
-from redis.exceptions import RedisError
+from redis.exceptions import RedisError, ResponseError
 
 
 class RealStringEntry(object):
@@ -16,6 +16,8 @@ class RealStringEntry(object):
             else:
                 return size_of_pointer_fn()
         except ValueError:
+            pass
+        except ResponseError:
             pass
 
         return size_of_pointer_fn()
