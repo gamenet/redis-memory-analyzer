@@ -1,8 +1,13 @@
 ChangeLog for RMA
 --------------------
-- 0.1.12
+- 0.1.13
 
    * Fix fails with TypeError if a key containing integer was removed.
+     Closes issue #22.
+
+- 0.1.12
+
+   * Fix fails with ResponseError if a key containing integer was removed.
      Closes issue #22.
    * Add more info to global rule description.
 

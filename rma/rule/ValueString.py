@@ -19,6 +19,8 @@ class RealStringEntry(object):
             pass
         except ResponseError:
             pass
+        except TypeError:
+            pass
 
         return size_of_pointer_fn()
 
