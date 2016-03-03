@@ -1,5 +1,10 @@
 ChangeLog for RMA
 --------------------
+- 0.1.14
+
+   * Fix fails with ValueError if a key containing Hash was removed.
+     Closes issue #23.
+
 - 0.1.13
 
    * Fix fails with TypeError if a key containing integer was removed.
