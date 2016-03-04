@@ -57,7 +57,9 @@ class HashAggregator(object):
         self.fieldUsedBytes = sum(obj.fieldUsedBytes for obj in g1)
         self.fieldAlignedBytes = sum(obj.fieldAlignedBytes for obj in g2)
 
-        if total > 1:
+        if total == 0:
+            self.fieldAvgCount = 0
+        elif total > 1:
             self.fieldAvgCount = statistics.mean(obj.count for obj in g3)
         else:
             self.fieldAvgCount = min((obj.count for obj in g3))
@@ -101,7 +103,7 @@ class Hash(object):
                 agg.fieldAvgCount,
                 agg.fieldUsedBytes,
                 agg.fieldAlignedBytes,
-                agg.fieldAlignedBytes / agg.fieldUsedBytes,
+                agg.fieldAlignedBytes / (agg.fieldUsedBytes if agg.fieldUsedBytes > 0 else 1),
                 agg.valueUsedBytes,
                 agg.valueAlignedBytes,
                 agg.valueAlignedBytes / (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),

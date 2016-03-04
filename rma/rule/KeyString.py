@@ -49,6 +49,9 @@ class KeyString(object):
                     progress_iterator((StringEntry(value=x["name"]) for x in data), progress), 3)
 
             total_elements = len(data)
+            if total_elements == 0:
+                continue
+
             aligned = sum(obj.aligned for obj in aligned_iter)
             used_bytes_generator = (obj.useful_bytes for obj in used_bytes_iter)
             useful_iter, min_iter, max_iter, mean_iter = tee(used_bytes_generator, 4)
