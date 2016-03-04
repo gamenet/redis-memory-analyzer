@@ -42,7 +42,10 @@ class SetAggregator(object):
 
         self.encoding = pref_encoding([obj.encoding for obj in g00], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in g0)
-        if total > 1:
+
+        if total == 0:
+            self.fieldAvgCount = 0
+        elif total > 1:
             self.fieldAvgCount = statistics.mean(obj.count for obj in g3)
         else:
             self.fieldAvgCount = min((obj.count for obj in g3))

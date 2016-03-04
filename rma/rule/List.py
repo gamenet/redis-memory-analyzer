@@ -50,7 +50,13 @@ class ListAggregator(object):
 
         self.encoding = pref_encoding([obj.encoding for obj in encode_iter], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in sys_iter)
-        if total > 1:
+
+        if total == 0:
+            self.fieldAvgCount = 0
+            self.fieldStdev = 0
+            self.fieldMinCount = 0
+            self.fieldMaxCount = 0
+        elif total > 1:
             self.fieldAvgCount = statistics.mean(obj.count for obj in avg_iter)
             self.fieldStdev = statistics.stdev(obj.count for obj in stdev_iter)
             self.fieldMinCount = min((obj.count for obj in min_iter))
