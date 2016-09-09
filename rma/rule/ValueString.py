@@ -94,6 +94,7 @@ class ValueString(object):
                     if 'DEBUG' in error_string:
                         use_debug_command = False
 
+            used_bytes = used_bytes if len(used_bytes) != 0 else [0]
             total_elements = len(used_bytes)
             used_user = sum(used_bytes)
             free_user = sum(free_bytes)
