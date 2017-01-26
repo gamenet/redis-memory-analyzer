@@ -1,4 +1,4 @@
-num_version = (0, 1, 15)
+num_version = (0, 1, 16)
 version = '.'.join([str(num) for num in num_version])
 
 classifiers = [

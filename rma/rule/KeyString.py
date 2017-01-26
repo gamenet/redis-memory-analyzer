@@ -76,7 +76,4 @@ class KeyString(object):
 
         progress.close()
 
-        return [
-            "key stats",
-            key_stat
-        ]
+        return key_stat

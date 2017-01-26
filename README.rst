@@ -62,6 +62,7 @@ After install used it from console:
                                  hash, list, set. Multiple types can be provided. If
                                  not specified, all data types will be returned.
                                  Allowed values arestring, hash, list, set, zset
+      -f --format TYPE           Output type format: json or text (by default)
 
 If you have large database try running first with ``--limit`` option to
 run first limited amount of keys. Also run with ``--types`` to limit

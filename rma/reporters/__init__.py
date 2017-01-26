@@ -1,2 +1,3 @@
 from rma.reporters.TextReporter import TextReporter
-__all__ = ['TextReporter']
+from rma.reporters.JsonReporter import JsonReporter
+__all__ = ['TextReporter', 'JsonReporter']

@@ -102,7 +102,4 @@ class Set(object):
 
         progress.close()
 
-        return [
-            "SET stat",
-            key_stat
-        ]
+        return key_stat
