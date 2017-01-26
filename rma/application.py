@@ -13,6 +13,26 @@ from rma.helpers import floored_percentage
 from collections import defaultdict
 from redis.exceptions import ResponseError
 
+def ptransform(nm):
+    if nm.startswith('celery-task-meta'):
+        spl = nm.split('-')
+        rt = '-'.join(spl[0:3])+':'+'-'.join(spl[3:])
+    elif nm.startswith('qo_cli.aff_aggregations.aggregate_aff_aname_aname'):
+        spl = nm.split('-')
+        rt = '-'.join(spl[0:1])+':'+'-'.join(spl[1:])
+    elif nm.endswith('_trigger_queue_user_job'):
+        spl = nm.split('_')
+        rt = '_'.join(spl[1:])+':'+'_'.join(spl[0:1])
+    elif nm.endswith('.reply.celery.pidbox'):
+        spl = nm.split('.')
+        rt = '.'.join(spl[1:])+':'+spl[0]
+    elif nm.endswith('_user_queue_user_job'):
+        spl = nm.split('_')
+        rt = '_'.join(spl[1:])+':'+spl[0]
+    else:
+        rt = nm
+    return rt
+
 
 def connect_to_redis(host, port, db=0, password=None):
     """
@@ -152,14 +172,15 @@ class RmaApplication(object):
                     total_keys = sum(len(values) for key, values in aggregate_patterns.items())
                     ret += (rule.analyze(keys=aggregate_patterns, total=total_keys))
 
+
         return ret
 
     def get_pattern_aggregated_data(self, data):
-        split_patterns = self.splitter.split((obj["name"] for obj in data))
+        split_patterns = self.splitter.split((ptransform(obj["name"]) for obj in data))
         self.logger.debug(split_patterns)
 
         aggregate_patterns = {item: [] for item in split_patterns}
         for pattern in split_patterns:
-            aggregate_patterns[pattern] = list(filter(lambda obj: fnmatch.fnmatch(obj["name"], pattern), data))
+            aggregate_patterns[pattern] = list(filter(lambda obj: fnmatch.fnmatch(ptransform(obj["name"]), pattern), data))
 
         return aggregate_patterns

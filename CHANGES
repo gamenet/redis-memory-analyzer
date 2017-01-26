@@ -1,5 +1,9 @@
 ChangeLog for RMA
 --------------------
+- 0.1.15
+   
+   * Fix #29 fails with ValueError if a key containing ValueString was removed.
+
 - 0.1.14
 
    * Fix fails with ValueError if a key containing Hash was removed.
