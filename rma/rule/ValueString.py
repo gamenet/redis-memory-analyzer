@@ -123,7 +123,4 @@ class ValueString(object):
 
         progress.close()
 
-        return [
-            "String value stat",
-            key_stat
-        ]
+        return key_stat

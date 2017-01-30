@@ -136,7 +136,4 @@ class Hash(object):
 
         progress.close()
 
-        return [
-            "Hash stat",
-            key_stat
-        ]
+        return key_stat

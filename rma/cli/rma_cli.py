@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import time
 import logging
+import sys
 from argparse import ArgumentParser, HelpFormatter
 from rma.application import RmaApplication
 
@@ -65,6 +66,10 @@ def main():
                         help="""Data types to include. Possible values are string, hash, list, set.
                               Multiple types can be provided. If not specified, all data types will be returned.
                               Allowed values are """ + ', '.join(VALID_TYPES))
+    parser.add_argument("-f", "--format",
+                        dest="format",
+                        default="text",
+                        help="Output type format: json or text (by default)")
 
     options = parser.parse_args()
 
@@ -85,13 +90,13 @@ def main():
             else:
                 filters['types'].append(x)
 
-    app = RmaApplication(host=options.host, port=options.port, db=options.db,
-                         password=options.password, match=options.match, limit=options.limit, filters=filters)
+    app = RmaApplication(host=options.host, port=options.port, db=options.db, password=options.password,
+                         match=options.match, limit=options.limit, filters=filters, format=options.format)
 
     start_time = time.clock()
     app.run()
-    print("\r\nDone in %s seconds" % (time.clock() - start_time))
 
+    sys.stderr.write("\r\nDone in %s seconds" % (time.clock() - start_time))
 
 if __name__ == '__main__':
     main()

@@ -121,7 +121,5 @@ class List(object):
         key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, 0, 0, 0, sum, sum, 0, sum, '', sum]))
 
         progress.close()
-        return [
-            "List stat",
-            key_stat
-        ]
+
+        return key_stat

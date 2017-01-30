@@ -14,21 +14,21 @@ class GlobalKeySpace(object):
 
     def analyze(self):
         total_keys = self.redis.dbsize()
+        used = {}
+        info = {}
 
-        keys_ = [
-            ["Total keys in db", total_keys],
-            ["RedisDB key space overhead", dict_overhead(total_keys)]
-        ]
         try:
-            keys_ += [["Used `{0}`".format(key), value] for key, value in self.redis.config_get("*max-*-*").items()]
+            for key, value in self.redis.config_get("*max-*-*").items():
+                used[key] = value
         except ResponseError as e:
             self.logger.warning("*max* option skipped: %s", repr(e))
 
-        keys_ += [["Info `{0}`".format(key), value] for key, value in self.redis.info('memory').items()]
+        for key, value in self.redis.info('memory').items():
+            info[key] = value
 
-        return [
-            {
-                'headers': ['Stat', "Value"],
-                'data': keys_
-            }
-        ]
+        return {
+            "info": info,
+            "used": used,
+            "totalKeys": total_keys,
+            "redisKeySpaceOverhead": dict_overhead(total_keys),
+        }
