@@ -93,7 +93,7 @@ class Scanner(object):
                 to_id = redis_type_to_id(key_type)
                 if to_id in self.accepted_types:
                     key_info_obj = {
-                        'name': key_name.decode("utf-8"),
+                        'name': key_name.decode("utf-8", "replace"),
                         'type': to_id,
                         'encoding': redis_encoding_str_to_id(key_encoding)
                     }
