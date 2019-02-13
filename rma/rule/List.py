@@ -3,7 +3,7 @@ from itertools import tee
 from tqdm import tqdm
 from rma.redis import *
 from rma.helpers import pref_encoding, make_total_row, progress_iterator
-
+import math
 
 class ListStatEntry(object):
     def __init__(self, info, redis):
@@ -14,6 +14,7 @@ class ListStatEntry(object):
         """
         key_name = info["name"]
         self.encoding = info['encoding']
+        self.ttl = info['ttl']
 
         self.values = redis.lrange(key_name, 0, -1)
         self.count = len(self.values)
@@ -45,8 +46,8 @@ class ListAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
-        encode_iter, sys_iter, avg_iter, stdev_iter, min_iter, max_iter, value_used_iter, value_align_iter = \
-            tee(all_obj, 8)
+        encode_iter, sys_iter, avg_iter, stdev_iter, min_iter, max_iter, value_used_iter, value_align_iter, ttl_iter = \
+            tee(all_obj, 9)
 
         self.encoding = pref_encoding([obj.encoding for obj in encode_iter], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in sys_iter)
@@ -70,6 +71,11 @@ class ListAggregator(object):
         self.valueUsedBytes = sum(obj.valueUsedBytes for obj in value_used_iter)
         self.valueAlignedBytes = sum(obj.valueAlignedBytes for obj in value_align_iter)
 
+        ttls = [obj.ttl for obj in ttl_iter]
+        self.ttlMin = min(ttls)
+        self.ttlMax = max(ttls)
+        self.ttlAvg = statistics.mean( ttls ) if len(ttls) > 1 else min(ttls)
+
     def __enter__(self):
         return self
 
@@ -87,7 +93,7 @@ class List(object):
 
     def analyze(self, keys, total=0):
         key_stat = {
-            'headers': ['Match', "Count", "Avg Count", "Min Count", "Max Count", "Stdev Count", "Value mem", "Real", "Ratio", "System", "Encoding", "Total"],
+            'headers': ['Match', "Count", "Avg Count", "Min Count", "Max Count", "Stdev Count", "Value mem", "Real", "Ratio", "System", "Encoding", "Total", 'TTL Min', 'TTL Max', 'TTL Avg'],
             'data': []
         }
 
@@ -111,14 +117,17 @@ class List(object):
                 agg.valueAlignedBytes / (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
                 agg.system,
                 agg.encoding,
-                agg.valueAlignedBytes + agg.system
+                agg.valueAlignedBytes + agg.system,
+                agg.ttlMin,
+                agg.ttlMax,
+                agg.ttlAvg,
             ]
 
             key_stat['data'].append(stat_entry)
             progress.update()
 
         key_stat['data'].sort(key=lambda x: x[8], reverse=True)
-        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, 0, 0, 0, sum, sum, 0, sum, '', sum]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, 0, 0, 0, sum, sum, 0, sum, '', sum, min, max, math.nan]))
 
         progress.close()
 

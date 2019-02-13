@@ -4,7 +4,7 @@ from tqdm import tqdm
 from rma.redis import *
 from rma.helpers import pref_encoding, make_total_row, progress_iterator
 from redis.exceptions import RedisError, ResponseError
-
+import math
 
 class RealStringEntry(object):
     @staticmethod
@@ -32,6 +32,7 @@ class RealStringEntry(object):
         """
         key_name = info["name"]
         self.encoding = info["encoding"]
+        self.ttl = info["ttl"]
         self.logger = logging.getLogger(__name__)
 
         if self.encoding == REDIS_ENCODING_ID_INT:
@@ -64,7 +65,7 @@ class ValueString(object):
 
     def analyze(self, keys, total=0):
         key_stat = {
-            'headers': ['Match', "Count", "Useful", "Free", "Real", "Ratio", "Encoding", "Min", "Max", "Avg"],
+            'headers': ['Match', "Count", "Useful", "Free", "Real", "Ratio", "Encoding", "Min", "Max", "Avg", "TTL Min", "TTL Max", "TTL Avg"],
             'data': []
         }
 
@@ -79,6 +80,7 @@ class ValueString(object):
             free_bytes = []
             aligned_bytes = []
             encodings = []
+            ttl = []
 
             for key_info in progress_iterator(data, progress):
                 try:
@@ -87,6 +89,7 @@ class ValueString(object):
                         free_bytes.append(stat.free_bytes)
                         aligned_bytes.append(stat.aligned)
                         encodings.append(stat.encoding)
+                        ttl.append(stat.ttl)
                 except RedisError as e:
                     # This code works in real time so key me be deleted and this code fail
                     error_string = repr(e)
@@ -102,7 +105,12 @@ class ValueString(object):
             preferred_encoding = pref_encoding(encodings, redis_encoding_id_to_str)
 
             min_bytes = min(used_bytes)
-            mean = statistics.mean(used_bytes) if total_elements > 1 else min_bytes
+            max_bytes = max(used_bytes)
+            mean_bytes = statistics.mean(used_bytes) if total_elements > 1 else min_bytes
+
+            min_ttl  = min(ttl) if len(ttl) >= 1 else -1
+            max_ttl  = max(ttl) if len(ttl) >= 1 else -1
+            mean_ttl = statistics.mean(ttl) if len(ttl) > 1 else min_ttl
 
             stat_entry = [
                 pattern,
@@ -113,13 +121,16 @@ class ValueString(object):
                 aligned / (used_user if used_user > 0 else 1),
                 preferred_encoding,
                 min_bytes,
-                max(used_bytes),
-                mean,
+                max_bytes,
+                mean_bytes,
+                min_ttl,
+                max_ttl,
+                mean_ttl,
             ]
             key_stat['data'].append(stat_entry)
 
         key_stat['data'].sort(key=lambda e: e[1], reverse=True)
-        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, 0, sum, 0, '', 0, 0, 0]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, 0, sum, 0, '', 0, 0, 0, min, max, math.nan]))
 
         progress.close()
 

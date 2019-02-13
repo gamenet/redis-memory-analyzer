@@ -2,7 +2,7 @@ from itertools import tee
 from tqdm import tqdm
 from rma.redis import *
 from rma.helpers import pref_encoding, make_total_row, progress_iterator
-
+import math
 import statistics
 
 
@@ -17,6 +17,7 @@ class SetStatEntry(object):
         key_name = info["name"]
         self.values = [v for v in redis.sscan_iter(key_name, '*', 1000)]
         self.encoding = info["encoding"]
+        self.ttl = info["ttl"]
         self.count = len(self.values)
 
         if self.encoding == REDIS_ENCODING_ID_HASHTABLE:
@@ -38,7 +39,7 @@ class SetAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
-        g00, g0, g3, v1, v2, v3 = tee(all_obj, 6)
+        g00, g0, g3, v1, v2, v3, ttl = tee(all_obj, 7)
 
         self.encoding = pref_encoding([obj.encoding for obj in g00], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in g0)
@@ -53,6 +54,11 @@ class SetAggregator(object):
         self.valueUsedBytes = sum(obj.valueUsedBytes for obj in v1)
         self.valueAlignedBytes = sum(obj.valueAlignedBytes for obj in v2)
         self.total = sum(obj.total for obj in v3)
+
+        ttls = [obj.ttl for obj in ttl]
+        self.ttlMin = min(ttls)
+        self.ttlMax = max(ttls)
+        self.ttlAvg = statistics.mean( ttls ) if len(ttls) > 1 else min(ttls)
 
     def __enter__(self):
         return self
@@ -71,7 +77,7 @@ class Set(object):
 
     def analyze(self, keys, total=0):
         key_stat = {
-            'headers': ['Match', "Count", "Avg Count", "Value mem", "Real", "Ratio", "System*", "Encoding", "Total"],
+            'headers': ['Match', "Count", "Avg Count", "Value mem", "Real", "Ratio", "System*", "Encoding", "Total", "TTL Min", "TTL Max", "TTL Avg."],
             'data': []
         }
 
@@ -92,13 +98,16 @@ class Set(object):
                 agg.valueAlignedBytes / (agg.valueUsedBytes if agg.valueUsedBytes > 0 else 1),
                 agg.system,
                 agg.encoding,
-                agg.total
+                agg.total,
+                agg.ttlMin,
+                agg.ttlMax,
+                agg.ttlAvg,
             ]
 
             key_stat['data'].append(stat_entry)
 
         key_stat['data'].sort(key=lambda x: x[8], reverse=True)
-        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, sum, sum, 0, sum, '', sum]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, sum, sum, 0, sum, '', sum, min, max, math.nan]))
 
         progress.close()
 
