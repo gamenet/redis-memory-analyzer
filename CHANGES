@@ -1,5 +1,9 @@
 ChangeLog for RMA
 --------------------
+- 0.2.0
+    * Calculate TTL feature for all key types and display min/max/mean TTL in Key summary tables.
+    * Replace invalid UTF-8 characters in redis key names when scanning keyspace.
+
 - 0.1.16
 
     * Added possibility to report output in JSON format. Issue #28
