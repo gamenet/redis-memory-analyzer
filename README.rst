@@ -61,6 +61,10 @@ After install used it from console:
                                  not specified, all data types will be returned.
                                  Allowed values arestring, hash, list, set, zset
       -f --format TYPE           Output type format: json or text (by default)
+     --max-key-depth MAX_DEPTH   Set the maximum depth to consider when
+                                 consolidating key segments (split by ":"). Any
+                                 segments past this depth will be squished into
+                                 a single "*".      
 
 If you have large database try running first with ``--limit`` option to
 run first limited amount of keys. Also run with ``--types`` to limit
@@ -70,6 +74,29 @@ queue with LUA (like in scanner does). So this option may be very
 useful. You can choose what kind of data would be aggregated from Redis
 node using ``-b (--behaviour)`` option as console argument. Supported
 behaviours are 'global', 'scanner', 'ram' and 'all'.
+
+The tool attempts to detect keys structured in a hierarchy (with ":" as the
+separating character) and consolidate them. Segments that look to be variable
+(currently any segments containing numbers) are consolidated together and
+represented with a single "*". The --max-key-depth argument allows you to
+specify how many levels should be considered before consolidating all of the
+remaining elements with a single "*".
+
+For example, if your keys are:
+
+    PREFIX                 -->   PREFIX
+    PREFIX:abc123          -->   PREFIX:*
+    PREFIX:def987          -->   PREFIX:*
+    PREFIX:abc123:SUFFIX   -->   PREFIX:*:SUFFIX
+    PREFIX:def987:SUFFIX   -->   PREFIX:*:SUFFIX
+
+However, if you pass --max-key-depth 1, these would be consolidated into:
+
+    PREFIX                 -->   PREFIX
+    PREFIX:abc123          -->   PREFIX:*
+    PREFIX:def987          -->   PREFIX:*
+    PREFIX:abc123:SUFFIX   -->   PREFIX:*
+    PREFIX:def987:SUFFIX   -->   PREFIX:*
 
 Internals
 ---------

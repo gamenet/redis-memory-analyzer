@@ -70,6 +70,12 @@ def main():
                         dest="format",
                         default="text",
                         help="Output type format: json or text (by default)")
+    parser.add_argument("--max-key-depth",
+                        dest="max_key_depth",
+                        default="0",
+                        type=int,
+                        help="""Set the maximum depth to consider when consolidating key segments (split by ":").  Any segments past
+                                this depth will be squished into a single "*".""")
 
     options = parser.parse_args()
 
@@ -91,7 +97,8 @@ def main():
                 filters['types'].append(x)
 
     app = RmaApplication(host=options.host, port=options.port, db=options.db, password=options.password,
-                         match=options.match, limit=options.limit, filters=filters, format=options.format)
+                         match=options.match, limit=options.limit, filters=filters, format=options.format,
+                         max_key_depth=options.max_key_depth)
 
     start_time = time.clock()
     app.run()
