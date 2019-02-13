@@ -125,7 +125,7 @@ class RmaApplication(object):
         is_all = self.behaviour == 'all'
         with Scanner(redis=self.redis, match=self.match, accepted_types=self.types) as scanner:
             keys = defaultdict(list)
-            for v in scanner.scan(limit=self.limit):
+            for v in scanner.scan(limit=self.limit, calculate_sizes=(is_all or self.behaviour == 'ram')):
                 keys[v["type"]].append(v)
 
             if self.isTextFormat:

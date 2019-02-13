@@ -28,14 +28,42 @@ class Scanner(object):
         self.pipeline_mode = False
         self.resolve_types_script = self.redis.register_script("""
             local ret = {}
+
             for i = 1, #KEYS do
                 local type = redis.call("TYPE", KEYS[i])
-                local encoding = redis.call("OBJECT", "ENCODING",KEYS[i])
-                local ttl = redis.call("TTL", KEYS[i])
-                ret[i] = {type["ok"], encoding, ttl}
+
+                if type["ok"] == 'none' then
+                    ret[i] = {}
+                else
+                    local encoding = redis.call("OBJECT", "ENCODING",KEYS[i])
+                    local ttl = redis.call("TTL", KEYS[i])
+                    local len = 0
+
+                    -- "calculate_sizes" option
+                    if ARGV[1] == '1' then
+                        if encoding == 'embstr' or encoding == 'raw' then
+                            len = redis.call("STRLEN", KEYS[i])
+                        elseif encoding == 'int' then
+                            local val = redis.call("GET", KEYS[i])
+                            if tonumber(val) < %(REDIS_SHARED_INTEGERS)d then
+                                len = 0
+                            else
+                                len = %(SIZE_OF_POINTER_FN)d
+                            end
+                        elseif encoding == 'linkedlist' or encoding == 'quicklist' or encoding == 'skiplist' then
+                            local items = redis.call("lrange", KEYS[i], 0, -1)
+                            len = {}
+                            for j = 1, #items do
+                                len[j] = #items[j]
+                            end
+                        end
+                    end
+
+                    ret[i] = {type["ok"], encoding, ttl, len}
+                end
             end
             return cmsgpack.pack(ret)
-        """)
+        """ % { "SIZE_OF_POINTER_FN": size_of_pointer_fn(), "REDIS_SHARED_INTEGERS": REDIS_SHARED_INTEGERS })
 
     def __enter__(self):
         return self
@@ -43,7 +71,7 @@ class Scanner(object):
     def __exit__(self, *exc):
         return False
 
-    def batch_scan(self, count=1000, batch_size=3000):
+    def batch_scan(self, count=1000, batch_size=3000, calculate_sizes=True):
         ret = []
         for key in self.redis.scan_iter(self.match, count=count):
             ret.append(key)
@@ -51,12 +79,12 @@ class Scanner(object):
                 yield from self.resolve_types(ret)
 
         if len(ret):
-            yield from self.resolve_types(ret)
+            yield from self.resolve_types(ret, calculate_sizes)
 
-    def resolve_types(self, ret):
+    def resolve_types(self, ret, calculate_sizes=True):
         if not self.pipeline_mode:
             try:
-                key_with_types = msgpack.unpackb(self.resolve_types_script(ret))
+                key_with_types = msgpack.unpackb(self.resolve_types_script(ret, [( '1' if calculate_sizes else '0' )] ))
             except ResponseError as e:
                 if "CROSSSLOT" not in repr(e):
                     raise e
@@ -79,14 +107,16 @@ class Scanner(object):
         key_with_types = [{'type': x, 'encoding': y, 'ttl': z} for x, y, z in chunker(pipe.execute(), 3)]
         return key_with_types
 
-    def scan(self, limit=1000):
+    def scan(self, limit=1000, calculate_sizes=True):
         with tqdm(total=min(limit, self.redis.dbsize()), desc="Match {0}".format(self.match),
                   miniters=1000) as progress:
 
             total = 0
             for key_tuple in self.batch_scan():
                 key_info, key_name = key_tuple
-                key_type, key_encoding, key_ttl = key_info
+                if len(key_info) == 0:                    
+                    continue # key deleted between scan and check
+                key_type, key_encoding, key_ttl, key_len = key_info
                 if not key_name:
                     self.logger.warning(
                         '\r\nWarning! Scan iterator return key with empty name `` and type %s', key_type)
@@ -98,7 +128,8 @@ class Scanner(object):
                         'name': key_name.decode("utf-8", "replace"),
                         'type': to_id,
                         'encoding': redis_encoding_str_to_id(key_encoding),
-                        'ttl': key_ttl
+                        'ttl': key_ttl,
+                        'len': key_len
                     }
                     yield key_info_obj
 
