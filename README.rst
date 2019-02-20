@@ -30,9 +30,7 @@ To install from source :
 
 ::
 
-    git clone https://github.com/gamenet/redis-memory-analyzer
-    cd redis-memory-analyzer
-    sudo python setup.py install
+    pip install git+https://github.com/gamenet/redis-memory-analyzer@v0.2.0
 
 Running
 -------
