@@ -24,10 +24,20 @@ def map_part_to_glob(index, part):
 
     return part
 
+def pass1_func( separator, max_depth ):
+    def f(x):
+        ret = []
+        for i,y in enumerate(x.split(separator)):
+            globbed = map_part_to_glob(i, y)
+            ret.append( globbed )
+        if max_depth and len(ret) > max_depth:
+            ret = ret[0:max_depth] + ["*"]
+        return ret
+    return f
 
 class SimpleSplitter(object):
-    def split(self, data, separator=":"):
-        pass1 = map(lambda x: list(map_part_to_glob(i, y) for i, y in enumerate(x.split(separator))), data)
+    def split(self, data, separator=":", max_depth=None):
+        pass1 = map(pass1_func(separator, max_depth), data)
         pass2 = self.fold_to_tree(pass1)
         return self.unfold_to_list(pass2, separator)
 

@@ -98,16 +98,16 @@ def ziplist_overhead(size):
     return Jemalloc.align(12 + 21 * size)
 
 
-def size_of_ziplist_aligned_string(value):
-    # Looks like we need something more complex here. We use calculation as 21 bytes per entry + len of string
-    # or len of pointer. Redis use more RAM saving policy but after aligning it has infelicity ~3-5%
-    try:
-        num_value = int(value)
-        return Jemalloc.align(size_of_pointer_fn())
-    except ValueError:
-        pass
+def size_of_ziplist_aligned_string(value_length):
+#    # Looks like we need something more complex here. We use calculation as 21 bytes per entry + len of string
+#    # or len of pointer. Redis use more RAM saving policy but after aligning it has infelicity ~3-5%
+#    try:
+#        num_value = int(value)
+#        return Jemalloc.align(size_of_pointer_fn())
+#    except ValueError:
+#        pass
 
-    return Jemalloc.align(len(value))
+    return Jemalloc.align(value_length)
 
 
 def linkedlist_overhead():
@@ -121,9 +121,8 @@ def linkedlist_entry_overhead():
     return 3*size_of_pointer_fn()
 
 
-def size_of_linkedlist_aligned_string(value):
-    return Jemalloc.align(linkedlist_entry_overhead() + len(value))
-
+def size_of_linkedlist_aligned_string(value_length):
+    return Jemalloc.align(linkedlist_entry_overhead() + value_length)
 
 def intset_overhead(size):
     #     typedef struct intset {

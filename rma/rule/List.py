@@ -15,20 +15,20 @@ class ListStatEntry(object):
         key_name = info["name"]
         self.encoding = info['encoding']
         self.ttl = info['ttl']
+        self.entry_lengths = info['len']
 
-        self.values = redis.lrange(key_name, 0, -1)
-        self.count = len(self.values)
+        self.count = len(self.entry_lengths)
         import time
         time.sleep(0.001)
-        used_bytes_iter, min_iter, max_iter = tee((len(x) for x in self.values), 3)
+        used_bytes_iter, min_iter, max_iter = tee(self.entry_lengths, 3)
 
         if self.encoding == REDIS_ENCODING_ID_LINKEDLIST:
             self.system = dict_overhead(self.count)
-            self.valueAlignedBytes = sum(map(size_of_linkedlist_aligned_string, self.values))
+            self.valueAlignedBytes = sum(map(size_of_linkedlist_aligned_string, self.entry_lengths))
         elif self.encoding == REDIS_ENCODING_ID_ZIPLIST or self.encoding == REDIS_ENCODING_ID_QUICKLIST:
             # Undone `quicklist`
             self.system = ziplist_overhead(self.count)
-            self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.values))
+            self.valueAlignedBytes = sum(map(size_of_ziplist_aligned_string, self.entry_lengths))
         else:
             raise Exception('Panic', 'Unknown encoding %s in %s' % (self.encoding, key_name))
 

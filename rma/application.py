@@ -79,7 +79,7 @@ class RmaApplication(object):
         REDIS_TYPE_ID_ZSET: [],
     }
 
-    def __init__(self, host="127.0.0.1", port=6367, password=None, db=0, match="*", limit=0, filters=None, logger=None, format="text"):
+    def __init__(self, host="127.0.0.1", port=6367, password=None, db=0, match="*", limit=0, filters=None, logger=None, format="text", max_key_depth=None):
         self.logger = logger or logging.getLogger(__name__)
 
         self.splitter = SimpleSplitter()
@@ -89,6 +89,7 @@ class RmaApplication(object):
 
         self.match = match
         self.limit = limit if limit != 0 else sys.maxsize
+        self.max_key_depth = max_key_depth
 
         if 'types' in filters:
             self.types = list(map(redis_type_to_id, filters['types']))
@@ -124,7 +125,7 @@ class RmaApplication(object):
         is_all = self.behaviour == 'all'
         with Scanner(redis=self.redis, match=self.match, accepted_types=self.types) as scanner:
             keys = defaultdict(list)
-            for v in scanner.scan(limit=self.limit):
+            for v in scanner.scan(limit=self.limit, calculate_sizes=(is_all or self.behaviour == 'ram')):
                 keys[v["type"]].append(v)
 
             if self.isTextFormat:
@@ -178,7 +179,7 @@ class RmaApplication(object):
         return {"stat": ret}
 
     def get_pattern_aggregated_data(self, data):
-        split_patterns = self.splitter.split((ptransform(obj["name"]) for obj in data))
+        split_patterns = self.splitter.split([ptransform(obj["name"]) for obj in data], max_depth=self.max_key_depth)
         self.logger.debug(split_patterns)
 
         aggregate_patterns = {item: [] for item in split_patterns}
