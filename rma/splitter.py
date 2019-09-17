@@ -26,10 +26,15 @@ def map_part_to_glob(index, part):
 
 
 class SimpleSplitter(object):
-    def split(self, data, separator=":"):
-        pass1 = map(lambda x: list(map_part_to_glob(i, y) for i, y in enumerate(x.split(separator))), data)
+    separator = ':'
+
+    def __init__(self, separator):
+        self.separator = separator
+
+    def split(self, data):
+        pass1 = map(lambda x: list(map_part_to_glob(i, y) for i, y in enumerate(x.split(self.separator))), data)
         pass2 = self.fold_to_tree(pass1)
-        return self.unfold_to_list(pass2, separator)
+        return self.unfold_to_list(pass2, self.separator)
 
     def fold_to_tree(self, pass1):
         tree = {}

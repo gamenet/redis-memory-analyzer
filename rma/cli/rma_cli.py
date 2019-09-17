@@ -70,6 +70,10 @@ def main():
                         dest="format",
                         default="text",
                         help="Output type format: json or text (by default)")
+    parser.add_argument("-x", "--separator",
+                        dest="separator",
+                        default=":",
+                        help="Specify namespace separator. Default is ':'.")
 
     options = parser.parse_args()
 
@@ -91,7 +95,8 @@ def main():
                 filters['types'].append(x)
 
     app = RmaApplication(host=options.host, port=options.port, db=options.db, password=options.password,
-                         match=options.match, limit=options.limit, filters=filters, format=options.format)
+                         match=options.match, limit=options.limit, filters=filters, format=options.format,
+                         separator=options.separator)
 
     start_time = time.clock()
     app.run()
