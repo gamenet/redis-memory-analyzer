@@ -73,7 +73,7 @@ def main():
     parser.add_argument("-x", "--separator",
                         dest="separator",
                         default=":",
-                        help="Specify namespace separator. Default is ':'.")
+                        help="Specify namespace separator. Default is ':'")
 
     options = parser.parse_args()
 
