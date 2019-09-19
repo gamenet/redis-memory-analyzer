@@ -61,6 +61,7 @@ After install used it from console:
                                  not specified, all data types will be returned.
                                  Allowed values arestring, hash, list, set, zset
       -f --format TYPE           Output type format: json or text (by default)
+      -x --separator SEPARATOR   Specify namespace separator. Default is ':'
 
 If you have large database try running first with ``--limit`` option to
 run first limited amount of keys. Also run with ``--types`` to limit
