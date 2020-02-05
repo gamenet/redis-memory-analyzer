@@ -34,7 +34,7 @@ def ptransform(nm):
     return rt
 
 
-def connect_to_redis(host, port, db=0, password=None):
+def connect_to_redis(host, port, db=0, password=None, ssl=False):
     """
 
     :param host:
@@ -44,7 +44,7 @@ def connect_to_redis(host, port, db=0, password=None):
     :return RmaRedis:
     """
     try:
-        redis = RmaRedis(host=host, port=port, db=db, password=password)
+        redis = RmaRedis(host=host, port=port, db=db, password=password, ssl=ssl)
         if not check_redis_version(redis):
             sys.stderr.write('This script only works with Redis Server version 2.6.x or higher\n')
             sys.exit(-1)
@@ -79,13 +79,13 @@ class RmaApplication(object):
         REDIS_TYPE_ID_ZSET: [],
     }
 
-    def __init__(self, host="127.0.0.1", port=6367, password=None, db=0, match="*", limit=0, filters=None, logger=None, format="text", separator=":"):
+    def __init__(self, host="127.0.0.1", port=6367, password=None, db=0, ssl=False, match="*", limit=0, filters=None, logger=None, format="text", separator=":"):
         self.logger = logger or logging.getLogger(__name__)
 
         self.splitter = SimpleSplitter(separator)
         self.isTextFormat = format == "text"
         self.reporter = TextReporter() if self.isTextFormat else JsonReporter()
-        self.redis = connect_to_redis(host=host, port=port, db=db, password=password)
+        self.redis = connect_to_redis(host=host, port=port, db=db, password=password, ssl=ssl)
 
         self.match = match
         self.limit = limit if limit != 0 else sys.maxsize
