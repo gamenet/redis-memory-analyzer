@@ -55,7 +55,7 @@ After install used it from console:
       -m, --match MATCH          Keys pattern to match
       -l, --limit LIMIT          Get max key matched by pattern
       -b, --behaviour BEHAVIOUR  Specify application working mode. Allowed values
-                                 areall, scanner, ram, global
+                                 are all, scanner, ram, global
       -t, --type TYPES           Data types to include. Possible values are string,
                                  hash, list, set. Multiple types can be provided. If
                                  not specified, all data types will be returned.
