@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-import time
+try:
+    from time import perf_counter as time_clock
+except ImportError:
+    from time import clock as time_clock
 import logging
 import sys
 from argparse import ArgumentParser, HelpFormatter
@@ -98,10 +101,10 @@ def main():
                          match=options.match, limit=options.limit, filters=filters, format=options.format,
                          separator=options.separator)
 
-    start_time = time.clock()
+    start_time = time_clock()
     app.run()
 
-    sys.stderr.write("\r\nDone in %s seconds" % (time.clock() - start_time))
+    sys.stderr.write("\r\nDone in %s seconds" % (time_clock() - start_time))
 
 if __name__ == '__main__':
     main()
