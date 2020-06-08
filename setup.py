@@ -31,6 +31,7 @@ setup(name='rma',
       install_requires=['redis', 'tabulate', 'tqdm', 'msgpack-python'],
       include_package_data=True,
       packages=['rma', 'rma.helpers', 'rma.reporters', 'rma.rule', 'rma.cli'],
+      python_requires='>3.5',
       package_data={
           'rma.cli': ['*.template']
       },

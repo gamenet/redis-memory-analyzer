@@ -17,7 +17,7 @@ Installing rma
 
 Pre-Requisites :
 
-1. python >= 3.4 and pip.
+1. python >= 3.5 and pip.
 2. redis-py.
 
 To install from PyPI (recommended) :
