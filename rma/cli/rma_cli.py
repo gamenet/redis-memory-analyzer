@@ -50,6 +50,10 @@ def main():
                         dest="db",
                         default=0,
                         help="Database number, defaults to 0")
+    parser.add_argument("--ssl",
+                        dest="ssl",
+                        action="store_true",
+                        help="If argument is specified, SSL will be used for making connection")
     parser.add_argument("-m", "--match",
                         dest="match",
                         default="*",
@@ -98,7 +102,7 @@ def main():
                 filters['types'].append(x)
 
     app = RmaApplication(host=options.host, port=options.port, db=options.db, password=options.password,
-                         match=options.match, limit=options.limit, filters=filters, format=options.format,
+                         ssl=options.ssl, match=options.match, limit=options.limit, filters=filters, format=options.format,
                          separator=options.separator)
 
     start_time = time_clock()
