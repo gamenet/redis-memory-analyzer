@@ -36,7 +36,7 @@ class RealStringEntry(object):
         self.logger = logging.getLogger(__name__)
 
         if self.encoding == REDIS_ENCODING_ID_INT:
-            self.useful_bytes = self.get_int_encoded_bytes(redis, key_name)
+            self.useful_bytes = info["len"]
             self.free_bytes = 0
             self.aligned = size_of_aligned_string_by_size(self.useful_bytes, encoding=self.encoding)
         elif self.encoding == REDIS_ENCODING_ID_EMBSTR or self.encoding == REDIS_ENCODING_ID_RAW:
@@ -45,7 +45,7 @@ class RealStringEntry(object):
                 self.useful_bytes = sdslen_response['val_sds_len']
                 self.free_bytes = sdslen_response['val_sds_avail']
             else:
-                self.useful_bytes = size_of_aligned_string_by_size(redis.strlen(key_name), self.encoding)
+                self.useful_bytes = info["len"]
                 self.free_bytes = 0
             # INFO Rewrite this to support Redis >= 3.2 sds dynamic header
             sds_len = 8 + self.useful_bytes + self.free_bytes + 1
