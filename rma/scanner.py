@@ -86,7 +86,14 @@ class Scanner(object):
             total = 0
             for key_tuple in self.batch_scan():
                 key_info, key_name = key_tuple
-                key_type, key_encoding, key_ttl = key_info
+
+                if type(key_info) == list:
+                    key_type, key_encoding, key_ttl = key_info
+                else:
+                    key_type = key_info["type"]
+                    key_encoding = key_info["encoding"]
+                    key_ttl = key_info["ttl"]
+
                 if not key_name:
                     self.logger.warning(
                         '\r\nWarning! Scan iterator return key with empty name `` and type %s', key_type)
