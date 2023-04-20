@@ -6,9 +6,10 @@ from rma.helpers import pref_encoding, make_total_row, progress_iterator
 import math
 
 class StringEntry(object):
-    def __init__(self, value="", ttl=-1):
+    def __init__(self, value="", ttl=-1,idleTime=-1):
         self.encoding = get_string_encoding(value)
         self.ttl = ttl
+        self.idleTime=idleTime
         self.useful_bytes = len(value)
         self.free_bytes = 0
         self.aligned = size_of_aligned_string(value, encoding=self.encoding)
@@ -36,7 +37,7 @@ class KeyString(object):
         :return:
         """
         key_stat = {
-            'headers': ['Match', "Count", "Useful", "Real", "Ratio", "Encoding", "Min", "Max", "Avg", "TTL Min", "TTL Max", "TTL Avg."],
+            'headers': ['Match', "Count", "Useful", "Real", "Ratio", "Encoding", "Min", "Max", "Avg", "TTL Min", "TTL Max", "TTL Avg.","idleTime Min", "idleTime Max", "idleTime Avg"],
             'data': []
         }
 
@@ -46,8 +47,8 @@ class KeyString(object):
                         leave=False)
 
         for pattern, data in keys.items():
-            used_bytes_iter, aligned_iter, encoding_iter, ttl_iter = tee(
-                    progress_iterator((StringEntry(value=x["name"], ttl=x["ttl"]) for x in data), progress), 4)
+            used_bytes_iter, aligned_iter, encoding_iter, ttl_iter,idle_time_iter = tee(
+                    progress_iterator((StringEntry(value=x["name"], ttl=x["ttl"],idleTime=x["idleTime"]) for x in data), progress), 5)
 
             total_elements = len(data)
             if total_elements == 0:
@@ -70,15 +71,19 @@ class KeyString(object):
             min_ttl = min(ttls)
             max_ttl = max(ttls)
             avg_ttl = statistics.mean(ttls) if len(ttls) > 1 else min(ttls)
+            idle_times = [obj.idleTime for obj in idle_time_iter]
+            min_idle_time = min(idle_times)
+            max_idle_time = max(idle_times)
+            avg_idle_time = statistics.mean(idle_times) if len(idle_times) > 1 else min(idle_times)
 
             stat_entry = [
                 pattern, total_elements, used_user, aligned, aligned / used_user, prefered_encoding,
-                min_value, max(max_iter), avg, min_ttl, max_ttl, avg_ttl
+                min_value, max(max_iter), avg, min_ttl, max_ttl, avg_ttl,min_idle_time,max_idle_time,avg_idle_time
             ]
             key_stat['data'].append(stat_entry)
 
         key_stat['data'].sort(key=lambda x: x[1], reverse=True)
-        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, sum, 0, '', 0, 0, 0, min, max, math.nan]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, sum, 0, '', 0, 0, 0, min, max, math.nan, min, max, math.nan]))
 
         progress.close()
 

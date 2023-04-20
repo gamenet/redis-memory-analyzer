@@ -32,7 +32,8 @@ class Scanner(object):
                 local type = redis.call("TYPE", KEYS[i])
                 local encoding = redis.call("OBJECT", "ENCODING",KEYS[i])
                 local ttl = redis.call("TTL", KEYS[i])
-                ret[i] = {type["ok"], encoding, ttl}
+                local idleTime=redis.call("OBJECT", "IDLETIME",KEYS[i])
+                ret[i] = {type["ok"], encoding, ttl,idleTime}
             end
             return cmsgpack.pack(ret)
         """)
@@ -76,7 +77,8 @@ class Scanner(object):
             pipe.type(key)
             pipe.object('ENCODING', key)
             pipe.ttl(key)
-        key_with_types = [{'type': x, 'encoding': y, 'ttl': z} for x, y, z in chunker(pipe.execute(), 3)]
+            pipe.object('idletime', key)
+        key_with_types = [{'type': x, 'encoding': y, 'ttl': z,'idleTime':i} for x, y, z,i in chunker(pipe.execute(), 4)]
         return key_with_types
 
     def scan(self, limit=1000):
@@ -86,7 +88,7 @@ class Scanner(object):
             total = 0
             for key_tuple in self.batch_scan():
                 key_info, key_name = key_tuple
-                key_type, key_encoding, key_ttl = key_info
+                key_type, key_encoding, key_ttl,key_idle_time = key_info
                 if not key_name:
                     self.logger.warning(
                         '\r\nWarning! Scan iterator return key with empty name `` and type %s', key_type)
@@ -98,7 +100,8 @@ class Scanner(object):
                         'name': key_name.decode("utf-8", "replace"),
                         'type': to_id,
                         'encoding': redis_encoding_str_to_id(key_encoding),
-                        'ttl': key_ttl
+                        'ttl': key_ttl,
+                        'idleTime': key_idle_time
                     }
                     yield key_info_obj
 
