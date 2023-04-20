@@ -33,6 +33,7 @@ class RealStringEntry(object):
         key_name = info["name"]
         self.encoding = info["encoding"]
         self.ttl = info["ttl"]
+        self.idleTime = info["idleTime"]
         self.logger = logging.getLogger(__name__)
 
         if self.encoding == REDIS_ENCODING_ID_INT:
@@ -65,7 +66,7 @@ class ValueString(object):
 
     def analyze(self, keys, total=0):
         key_stat = {
-            'headers': ['Match', "Count", "Useful", "Free", "Real", "Ratio", "Encoding", "Min", "Max", "Avg", "TTL Min", "TTL Max", "TTL Avg"],
+            'headers': ['Match', "Count", "Useful", "Free", "Real", "Ratio", "Encoding", "Min", "Max", "Avg", "TTL Min", "TTL Max", "TTL Avg","idleTime Min", "idleTime Max", "idleTime Avg"],
             'data': []
         }
 
@@ -81,6 +82,7 @@ class ValueString(object):
             aligned_bytes = []
             encodings = []
             ttl = []
+            idleTime=[]
 
             for key_info in progress_iterator(data, progress):
                 try:
@@ -90,6 +92,7 @@ class ValueString(object):
                         aligned_bytes.append(stat.aligned)
                         encodings.append(stat.encoding)
                         ttl.append(stat.ttl)
+                        idleTime.append(stat.idleTime)
                 except RedisError as e:
                     # This code works in real time so key me be deleted and this code fail
                     error_string = repr(e)
@@ -111,6 +114,9 @@ class ValueString(object):
             min_ttl  = min(ttl) if len(ttl) >= 1 else -1
             max_ttl  = max(ttl) if len(ttl) >= 1 else -1
             mean_ttl = statistics.mean(ttl) if len(ttl) > 1 else min_ttl
+            min_idle_time = min(idleTime) if len(idleTime) >= 1 else -1
+            max_idle_time = max(idleTime) if len(idleTime) >= 1 else -1
+            mean_idle_time = statistics.mean(idleTime) if len(idleTime) > 1 else min_idle_time
 
             stat_entry = [
                 pattern,
@@ -126,11 +132,14 @@ class ValueString(object):
                 min_ttl,
                 max_ttl,
                 mean_ttl,
+                min_idle_time,
+                max_idle_time,
+                mean_idle_time,
             ]
             key_stat['data'].append(stat_entry)
 
         key_stat['data'].sort(key=lambda e: e[1], reverse=True)
-        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, 0, sum, 0, '', 0, 0, 0, min, max, math.nan]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, sum, 0, sum, 0, '', 0, 0, 0, min, max, math.nan,min, max, math.nan]))
 
         progress.close()
 

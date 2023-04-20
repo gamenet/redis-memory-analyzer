@@ -15,6 +15,7 @@ class ListStatEntry(object):
         key_name = info["name"]
         self.encoding = info['encoding']
         self.ttl = info['ttl']
+        self.idleTime = info["idleTime"]
 
         self.values = redis.lrange(key_name, 0, -1)
         self.count = len(self.values)
@@ -46,8 +47,8 @@ class ListAggregator(object):
     def __init__(self, all_obj, total):
         self.total_elements = total
 
-        encode_iter, sys_iter, avg_iter, stdev_iter, min_iter, max_iter, value_used_iter, value_align_iter, ttl_iter = \
-            tee(all_obj, 9)
+        encode_iter, sys_iter, avg_iter, stdev_iter, min_iter, max_iter, value_used_iter, value_align_iter, ttl_iter,idle_time_iter = \
+            tee(all_obj, 10)
 
         self.encoding = pref_encoding([obj.encoding for obj in encode_iter], redis_encoding_id_to_str)
         self.system = sum(obj.system for obj in sys_iter)
@@ -75,6 +76,10 @@ class ListAggregator(object):
         self.ttlMin = min(ttls)
         self.ttlMax = max(ttls)
         self.ttlAvg = statistics.mean( ttls ) if len(ttls) > 1 else min(ttls)
+        idleTimes = [obj.idleTime for obj in idle_time_iter]
+        self.idleTimeMin = min(idleTimes)
+        self.idleTimeMax = max(idleTimes)
+        self.idleTimeAvg = statistics.mean(idleTimes) if len(idleTimes) > 1 else min(idleTimes)
 
     def __enter__(self):
         return self
@@ -93,7 +98,7 @@ class List(object):
 
     def analyze(self, keys, total=0):
         key_stat = {
-            'headers': ['Match', "Count", "Avg Count", "Min Count", "Max Count", "Stdev Count", "Value mem", "Real", "Ratio", "System", "Encoding", "Total", 'TTL Min', 'TTL Max', 'TTL Avg'],
+            'headers': ['Match', "Count", "Avg Count", "Min Count", "Max Count", "Stdev Count", "Value mem", "Real", "Ratio", "System", "Encoding", "Total", 'TTL Min', 'TTL Max', 'TTL Avg',"idleTime Min", "idleTime Max", "idleTime Avg"],
             'data': []
         }
 
@@ -121,13 +126,16 @@ class List(object):
                 agg.ttlMin,
                 agg.ttlMax,
                 agg.ttlAvg,
+                agg.idleTimeMin,
+                agg.idleTimeMax,
+                agg.idleTimeAvg,
             ]
 
             key_stat['data'].append(stat_entry)
             progress.update()
 
         key_stat['data'].sort(key=lambda x: x[8], reverse=True)
-        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, 0, 0, 0, sum, sum, 0, sum, '', sum, min, max, math.nan]))
+        key_stat['data'].append(make_total_row(key_stat['data'], ['Total:', sum, 0, 0, 0, 0, sum, sum, 0, sum, '', sum, min, max, math.nan, min, max, math.nan]))
 
         progress.close()
 
