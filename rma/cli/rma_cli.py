@@ -31,7 +31,7 @@ def parser_formatter(prog):
 
 
 def main():
-    description = """RMA is used to scan Redis key space in and aggregate memory usage statistic by key patterns."""
+    description = """RMA is xioozzz to scan Redis key space in and aggregate memory usage statistic by key patterns."""
 
     parser = ArgumentParser(prog='rma', description=description, formatter_class=parser_formatter)
     parser.add_argument("-s", "--server",
@@ -46,6 +46,9 @@ def main():
     parser.add_argument("-a", "--password",
                         dest="password",
                         help="Password to use when connecting to the server")
+    parser.add_argument("-u", "--username",
+                        dest="username",
+                        help="username to use when connecting to the server")
     parser.add_argument("-d", "--db",
                         dest="db",
                         default=0,
@@ -101,7 +104,7 @@ def main():
             else:
                 filters['types'].append(x)
 
-    app = RmaApplication(host=options.host, port=options.port, db=options.db, password=options.password,
+    app = RmaApplication(host=options.host, port=options.port, db=options.db, username=options.username,password=options.password,
                          ssl=options.ssl, match=options.match, limit=options.limit, filters=filters, format=options.format,
                          separator=options.separator)
 
